@@ -1,0 +1,15 @@
+{
+  "name": "@quietspace/shared-lib",
+  "version": "0.0.1",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@quietspace/shared-types": "*",
+    "@supabase/supabase-js": "^2.43.4",
+    "openai": "^4.47.1"
+  }
+}

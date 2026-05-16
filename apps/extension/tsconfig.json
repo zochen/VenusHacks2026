@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "types": ["chrome", "vite/client"],
+    "noEmit": true,
+    "paths": {
+      "@quietspace/shared-types": ["../../packages/shared-types/src/index.ts"],
+      "@quietspace/shared-types/*": ["../../packages/shared-types/src/*"],
+      "@quietspace/shared-ui": ["../../packages/shared-ui/src/index.ts"],
+      "@quietspace/shared-ui/*": ["../../packages/shared-ui/src/*"],
+      "@quietspace/shared-lib": ["../../packages/shared-lib/src/index.ts"],
+      "@quietspace/shared-lib/*": ["../../packages/shared-lib/src/*"]
+    }
+  },
+  "include": ["src/**/*", "manifest.json", "vite.config.ts"]
+}

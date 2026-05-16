@@ -1,0 +1,19 @@
+{
+  "name": "quietspace",
+  "private": true,
+  "version": "0.0.1",
+  "description": "QuietSpace — accessibility platform for technical interviews (web app + Chrome extension).",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace apps/web",
+    "dev:extension": "npm run dev --workspace apps/extension",
+    "build:all": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

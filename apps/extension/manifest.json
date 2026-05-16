@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "QuietSpace",
+  "version": "0.0.1",
+  "description": "Accessibility overlay for technical interviews on Google Meet, Zoom, and Microsoft Teams.",
+  "permissions": ["storage", "activeTab", "scripting", "tabs"],
+  "host_permissions": [
+    "https://meet.google.com/*",
+    "https://*.zoom.us/*",
+    "https://teams.microsoft.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://meet.google.com/*",
+        "https://*.zoom.us/*",
+        "https://teams.microsoft.com/*"
+      ],
+      "js": ["src/content/index.tsx"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_title": "QuietSpace"
+  },
+  "options_page": "src/options/index.html"
+}

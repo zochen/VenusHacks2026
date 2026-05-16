@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "preserve",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@quietspace/shared-types": ["packages/shared-types/src/index.ts"],
+      "@quietspace/shared-types/*": ["packages/shared-types/src/*"],
+      "@quietspace/shared-ui": ["packages/shared-ui/src/index.ts"],
+      "@quietspace/shared-ui/*": ["packages/shared-ui/src/*"],
+      "@quietspace/shared-lib": ["packages/shared-lib/src/index.ts"],
+      "@quietspace/shared-lib/*": ["packages/shared-lib/src/*"]
+    }
+  }
+}
