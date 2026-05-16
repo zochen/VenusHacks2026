@@ -21,18 +21,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             justifyContent: 'space-between',
             alignItems: 'center',
             padding: '16px 32px',
-            borderBottom: '1px solid #e1e5dd',
+            borderBottom: '1px solid #e6eef6',
             background: '#ffffff',
           }}
         >
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700, fontSize: 18, color: '#2a2d33' }}>
-            <span style={{ fontSize: 22 }}>🌿</span> CapyConnect
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700, fontSize: 18, color: '#123244' }}>
+            <span style={{ fontSize: 22 }}>🪼</span>
+            <span style={{ marginLeft: 6 }}>CapyConnect</span>
           </Link>
-          <nav style={{ display: 'flex', gap: 24, fontSize: 14 }}>
-            <Link href="/onboarding" style={{ color: '#2a2d33' }}>Onboarding</Link>
-            <Link href="/candidate/dashboard" style={{ color: '#2a2d33' }}>My dashboard</Link>
-            <Link href="/candidate/interview" style={{ color: '#2a2d33' }}>Simulator</Link>
-            <Link href="/interviewer/dashboard" style={{ color: '#2a2d33' }}>Interviewer</Link>
+
+          <nav style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
+            <a href="/download-extension" style={{ fontSize: 14, color: '#123244', textDecoration: 'none' }}>Download extension</a>
+            <Link href="/onboarding" style={{ fontSize: 14, color: '#123244', textDecoration: 'none' }}>Sign up</Link>
+            <Link href="/" style={{ fontSize: 14, color: '#123244', textDecoration: 'none' }}>About</Link>
           </nav>
         </header>
         {children}

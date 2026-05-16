@@ -28,7 +28,7 @@ type SpeechRecognitionLike = {
 
 export function Overlay() {
   const [collapsed, setCollapsed] = React.useState(false);
-  const [entries, setEntries] = React.useState<TranscriptEntry[]>(INITIAL_TRANSCRIPT);
+  const [entries, setEntries] = React.useState<TranscriptEntry[]>(DEMO_TRANSCRIPT);
   const [listening, setListening] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const recognitionRef = React.useRef<SpeechRecognitionLike | null>(null);
