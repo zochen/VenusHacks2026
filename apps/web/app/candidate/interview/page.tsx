@@ -40,7 +40,7 @@ const DEFAULT_PREFS: Preferences = {
 function loadPrefs(): Preferences {
   if (typeof window === 'undefined') return DEFAULT_PREFS;
   try {
-    const raw = localStorage.getItem('quietspace.preferences');
+  const raw = localStorage.getItem('capyconnect.preferences');
     if (!raw) return DEFAULT_PREFS;
     return { ...DEFAULT_PREFS, ...(JSON.parse(raw) as Partial<Preferences>) };
   } catch {

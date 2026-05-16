@@ -4,17 +4,18 @@
 
 export const tokens = {
   color: {
-    background: '#faf7f2',
+    // Calming blues and beach sand tones
+    background: '#f7fbff', // very light blue
     surface: '#ffffff',
-    surfaceMuted: '#eef2ed',
-    border: '#e1e5dd',
-    text: '#2a2d33',
-    textMuted: '#6b7280',
-    accent: '#5b8b6f',
-    accentSoft: '#a6c4b1',
-    accentMuted: '#e3efe7',
-    danger: '#d97a6c',
-    warning: '#e0b072',
+    surfaceMuted: '#f1f8ff',
+    border: '#e6eef6',
+    text: '#123244', // deep blue-gray
+    textMuted: '#56778d',
+    accent: '#4a90e2', // calm ocean blue
+    accentSoft: '#bcdff8',
+    accentMuted: '#eaf6ff',
+    danger: '#e07a6c',
+    warning: '#f0cfae', // sand tone for cautions
   },
   radius: {
     sm: '6px',

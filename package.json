@@ -1,8 +1,8 @@
 {
-  "name": "quietspace",
+  "name": "capyconnect",
   "private": true,
   "version": "0.0.1",
-  "description": "QuietSpace — accessibility platform for technical interviews (web app + Chrome extension).",
+  "description": "CapyConnect — accessibility platform for technical interviews (web app + Chrome extension).",
   "workspaces": [
     "apps/*",
     "packages/*"

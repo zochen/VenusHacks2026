@@ -10,7 +10,7 @@ import { Overlay } from './overlay';
 // TODO(Person 1): notify background of OVERLAY_MOUNTED via chrome.runtime.sendMessage
 // TODO(Person 1): cleanly unmount on SPA navigation (Meet/Zoom reuse the document)
 
-const HOST_ID = 'quietspace-overlay-host';
+const HOST_ID = 'capyconnect-overlay-host';
 
 function mount() {
   if (document.getElementById(HOST_ID)) return; // guard re-injection

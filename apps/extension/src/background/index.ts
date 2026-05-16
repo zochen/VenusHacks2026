@@ -14,8 +14,8 @@ const WEB_URL = 'http://localhost:3000';
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason !== 'install') return;
   try {
-    const { quietspaceToken } = await chrome.storage.local.get('quietspaceToken');
-    if (!quietspaceToken) {
+    const { capyconnectToken } = await chrome.storage.local.get('capyconnectToken');
+    if (!capyconnectToken) {
       chrome.tabs.create({ url: `${WEB_URL}/onboarding` });
     }
   } catch {

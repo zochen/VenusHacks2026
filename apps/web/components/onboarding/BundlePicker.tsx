@@ -77,7 +77,7 @@ export function BundlePicker({
   const currentBundle = BUNDLES.find((b) => b.id === expanded);
 
   return (
-    <section style={{ animation: 'quietspace-panel-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
+  <section style={{ animation: 'capyconnect-panel-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
         <h1 style={{ fontSize: 32, margin: '0 0 10px' }}>{title}</h1>
         <p style={{ color: '#6b7280', fontSize: 16, margin: 0 }}>{subtitle}</p>
@@ -195,7 +195,7 @@ function BundleCustomizer({
         padding: 28,
         boxShadow: '0 4px 16px rgba(20, 30, 25, 0.06)',
         overflow: 'hidden',
-        animation: 'quietspace-panel-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+  animation: 'capyconnect-panel-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1)',
       }}
     >
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>

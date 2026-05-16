@@ -1,4 +1,4 @@
-# QuietSpace — Chrome extension (starter)
+# CapyConnect — Chrome extension (starter)
 
 A Manifest V3 browser extension that injects an accessibility overlay on top of live video interviews (Google Meet, Zoom, Microsoft Teams). This is a **starter scaffold** — it builds, loads, and shows a floating panel on supported sites, but it isn't yet connected to the QuietSpace web app.
 
@@ -29,7 +29,7 @@ Then in Chrome:
 2. Toggle **Developer mode** on (top right)
 3. Click **Load unpacked**
 4. Select `apps/extension/dist`
-5. Pin the QuietSpace icon to your toolbar
+5. Pin the CapyConnect icon to your toolbar
 
 Open <https://meet.google.com> (or any supported call URL) and the floating panel appears in the bottom-right. Click the brand icon to collapse, click the small green button to expand.
 
@@ -38,7 +38,7 @@ Open <https://meet.google.com> (or any supported call URL) and the floating pane
 Vite watch mode rebuilds `dist/` on every save. To pick up the new build in Chrome:
 
 1. Open `chrome://extensions`
-2. Click the **reload** icon on the QuietSpace card
+2. Click the **reload** icon on the CapyConnect card
 3. Refresh the Meet/Zoom/Teams tab
 
 The popup and options pages reload automatically.

@@ -93,7 +93,7 @@ export function BasicInfoForm({
   const justSaved = savedAt && Date.now() - savedAt < 4000;
 
   return (
-    <section style={{ animation: 'quietspace-panel-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
+  <section style={{ animation: 'capyconnect-panel-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
         <h1 style={{ fontSize: 32, margin: '0 0 10px' }}>{headerTitle}</h1>
         <p style={{ color: '#6b7280', fontSize: 16, margin: 0 }}>{headerSubtitle}</p>

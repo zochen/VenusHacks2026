@@ -28,7 +28,7 @@ type Tab = 'profile' | 'preferences';
 function loadProfile(): ProfileInfo {
   if (typeof window === 'undefined') return EMPTY_INFO;
   try {
-    const raw = localStorage.getItem('quietspace.profile');
+    const raw = localStorage.getItem('capyconnect.profile');
     if (!raw) return EMPTY_INFO;
     const parsed = JSON.parse(raw) as Partial<ProfileInfo>;
     return { ...EMPTY_INFO, ...parsed };
@@ -40,7 +40,7 @@ function loadProfile(): ProfileInfo {
 function loadPrefs(): SavedPrefs | null {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = localStorage.getItem('quietspace.preferences');
+    const raw = localStorage.getItem('capyconnect.preferences');
     return raw ? (JSON.parse(raw) as SavedPrefs) : null;
   } catch {
     return null;
@@ -50,7 +50,7 @@ function loadPrefs(): SavedPrefs | null {
 function loadFeatures(): string[] | null {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = localStorage.getItem('quietspace.features');
+    const raw = localStorage.getItem('capyconnect.features');
     return raw ? (JSON.parse(raw) as string[]) : null;
   } catch {
     return null;
@@ -85,7 +85,7 @@ export default function CandidateProfilePage() {
       avatarDataUrl: info.avatarDataUrl,
     };
     try {
-      localStorage.setItem('quietspace.profile', JSON.stringify(profile));
+      localStorage.setItem('capyconnect.profile', JSON.stringify(profile));
     } catch {}
     setProfileSavedAt(Date.now());
   }
@@ -96,8 +96,8 @@ export default function CandidateProfilePage() {
       ...derivePreferencesFromFeatures(features),
     };
     try {
-      localStorage.setItem('quietspace.preferences', JSON.stringify(prefs));
-      localStorage.setItem('quietspace.features', JSON.stringify(features));
+      localStorage.setItem('capyconnect.preferences', JSON.stringify(prefs));
+      localStorage.setItem('capyconnect.features', JSON.stringify(features));
     } catch {}
     setPrefsSavedAt(Date.now());
   }

@@ -27,7 +27,7 @@ export default function OnboardingPage() {
       avatarDataUrl: info.avatarDataUrl,
     };
     try {
-      localStorage.setItem('quietspace.profile', JSON.stringify(profile));
+      localStorage.setItem('capyconnect.profile', JSON.stringify(profile));
     } catch {}
     setStep('style');
   }
@@ -38,8 +38,8 @@ export default function OnboardingPage() {
       ...derivePreferencesFromFeatures(features),
     };
     try {
-      localStorage.setItem('quietspace.preferences', JSON.stringify(prefs));
-      localStorage.setItem('quietspace.features', JSON.stringify(features));
+      localStorage.setItem('capyconnect.preferences', JSON.stringify(prefs));
+      localStorage.setItem('capyconnect.features', JSON.stringify(features));
     } catch {}
     router.push('/candidate/dashboard');
   }

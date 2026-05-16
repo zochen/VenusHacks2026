@@ -49,23 +49,23 @@ export function Popup() {
       >
         <span style={{ fontSize: 22 }}>🌿</span>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 15 }}>QuietSpace</div>
-          <div style={{ fontSize: 11, color: '#6b7280' }}>Accessibility overlay for interviews</div>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>CapyConnect</div>
+          <div style={{ fontSize: 11, color: '#56778d' }}>Accessibility overlay for interviews</div>
         </div>
       </header>
 
       <section style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
         {/* Active-tab status */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            padding: '10px 12px',
-            background: hostSupported ? '#e3efe7' : '#fef3e7',
-            borderRadius: 12,
-            fontSize: 13,
-          }}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '10px 12px',
+              background: hostSupported ? '#eaf6ff' : '#fef7ec',
+              borderRadius: 12,
+              fontSize: 13,
+            }}
         >
           <span
             aria-hidden
@@ -78,7 +78,7 @@ export function Popup() {
             }}
           />
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontWeight: 600, color: hostSupported ? '#3d6a51' : '#8a5a18' }}>
+              <div style={{ fontWeight: 600, color: hostSupported ? '#2b6ea3' : '#8a5a18' }}>
               {hostSupported ? 'Overlay active on this tab' : 'Not on a supported call'}
             </div>
             <div style={{ fontSize: 11, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -99,7 +99,7 @@ export function Popup() {
           }}
         >
           <strong style={{ display: 'block', color: '#2a2d33', marginBottom: 4 }}>Not signed in</strong>
-          Sign in on the QuietSpace web app to sync your communication-style preferences here.
+          Sign in on the CapyConnect web app to sync your communication-style preferences here.
         </div>
 
         {/* Actions */}

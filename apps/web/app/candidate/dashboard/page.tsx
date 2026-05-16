@@ -102,7 +102,7 @@ function formatWhen(iso: string): { date: string; time: string; relative: string
 function loadProfile(): Profile | null {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = localStorage.getItem('quietspace.profile');
+    const raw = localStorage.getItem('capyconnect.profile');
     if (!raw) return null;
     return JSON.parse(raw) as Profile;
   } catch {

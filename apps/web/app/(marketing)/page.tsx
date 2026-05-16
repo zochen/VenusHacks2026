@@ -46,7 +46,7 @@ export default function MarketingPage() {
           Technical interviews shouldn't sound the same to everyone.
         </h1>
         <p style={{ fontSize: 20, color: '#6b7280', maxWidth: 640, margin: '0 auto 40px', lineHeight: 1.5 }}>
-          QuietSpace is an accessibility layer for technical interviews — captions, clarifications, and a calmer pace,
+          CapyConnect is an accessibility layer for technical interviews — captions, clarifications, and a calmer pace,
           available in our practice simulator and as a Chrome overlay on real video calls.
         </p>
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -54,7 +54,7 @@ export default function MarketingPage() {
             href="/onboarding"
             style={{
               padding: '14px 28px',
-              background: '#5b8b6f',
+              background: '#4a90e2',
               color: '#fff',
               borderRadius: 12,
               fontWeight: 600,
@@ -68,8 +68,8 @@ export default function MarketingPage() {
             style={{
               padding: '14px 28px',
               background: '#fff',
-              color: '#2a2d33',
-              border: '1px solid #e1e5dd',
+              color: '#123244',
+              border: '1px solid #e6eef6',
               borderRadius: 12,
               fontWeight: 600,
               fontSize: 16,

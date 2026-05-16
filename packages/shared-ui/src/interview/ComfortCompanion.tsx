@@ -10,7 +10,7 @@ export interface ComfortCompanionProps {
   label?: string;
 }
 
-const KEYFRAMES_ID = 'quietspace-companion-keyframes';
+const KEYFRAMES_ID = 'capyconnect-companion-keyframes';
 
 function injectKeyframes() {
   if (typeof document === 'undefined') return;
@@ -18,12 +18,12 @@ function injectKeyframes() {
   const style = document.createElement('style');
   style.id = KEYFRAMES_ID;
   style.textContent = `
-    @keyframes quietspace-breathe {
+    @keyframes capyconnect-breathe {
       0%, 100% { transform: scale(1); opacity: 0.85; }
       50% { transform: scale(1.08); opacity: 1; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .quietspace-breathing { animation: none !important; }
+      .capyconnect-breathing { animation: none !important; }
     }
   `;
   document.head.appendChild(style);
@@ -37,7 +37,7 @@ export function ComfortCompanion({ size = 120, label = 'Breathe with me' }: Comf
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, fontFamily: tokens.font.sans }}>
       <div
-        className="quietspace-breathing"
+        className="capyconnect-breathing"
         style={{
           width: size,
           height: size,
@@ -47,7 +47,7 @@ export function ComfortCompanion({ size = 120, label = 'Breathe with me' }: Comf
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: size * 0.55,
-          animation: 'quietspace-breathe 8s ease-in-out infinite',
+          animation: 'capyconnect-breathe 8s ease-in-out infinite',
           boxShadow: `0 0 0 12px ${tokens.color.accentMuted}55`,
         }}
         role="img"

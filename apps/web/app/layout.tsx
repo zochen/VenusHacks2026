@@ -7,7 +7,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'QuietSpace — Accessible technical interviews',
+  title: 'CapyConnect — Accessible technical interviews',
   description: 'Accessibility platform that adapts technical interviews to how candidates communicate best.',
 };
 
@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         >
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700, fontSize: 18, color: '#2a2d33' }}>
-            <span style={{ fontSize: 22 }}>🌿</span> QuietSpace
+            <span style={{ fontSize: 22 }}>🌿</span> CapyConnect
           </Link>
           <nav style={{ display: 'flex', gap: 24, fontSize: 14 }}>
             <Link href="/onboarding" style={{ color: '#2a2d33' }}>Onboarding</Link>

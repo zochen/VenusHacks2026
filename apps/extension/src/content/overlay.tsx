@@ -12,7 +12,7 @@ import type { TranscriptEntry } from '@quietspace/shared-types';
 // TODO(Person 1): make the panel draggable
 
 const DEMO_TRANSCRIPT: TranscriptEntry[] = [
-  { id: 'demo-1', speaker: 'interviewer', text: 'QuietSpace overlay is active — captions will appear here.', timestamp: 0, isFinal: true },
+  { id: 'demo-1', speaker: 'interviewer', text: 'CapyConnect overlay is active — captions will appear here.', timestamp: 0, isFinal: true },
 ];
 
 export function Overlay() {
@@ -23,7 +23,7 @@ export function Overlay() {
       <button
         type="button"
         onClick={() => setCollapsed(false)}
-        aria-label="Expand QuietSpace"
+        aria-label="Expand CapyConnect"
         style={{
           position: 'fixed',
           right: 20,
@@ -31,7 +31,7 @@ export function Overlay() {
           width: 56,
           height: 56,
           borderRadius: '50%',
-          background: '#5b8b6f',
+          background: '#4a90e2',
           color: '#fff',
           border: 'none',
           boxShadow: '0 8px 24px rgba(20, 30, 25, 0.25)',
@@ -50,7 +50,7 @@ export function Overlay() {
 
   return (
     <div
-      data-quietspace-overlay
+      data-capyconnect-overlay
       style={{
         position: 'fixed',
         right: 20,
@@ -61,7 +61,7 @@ export function Overlay() {
         border: '1px solid #e1e5dd',
         boxShadow: '0 12px 32px rgba(20, 30, 25, 0.16)',
         fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-        color: '#2a2d33',
+  color: '#123244',
         pointerEvents: 'auto',
         overflow: 'hidden',
         display: 'flex',
@@ -80,16 +80,16 @@ export function Overlay() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 20 }}>🌿</span>
-          <span style={{ fontWeight: 700, fontSize: 14 }}>QuietSpace</span>
+          <span style={{ fontSize: 20 }}>🪼</span>
+          <span style={{ fontWeight: 700, fontSize: 14 }}>CapyConnect</span>
           <span
             style={{
               fontSize: 10,
               fontWeight: 600,
               textTransform: 'uppercase',
               letterSpacing: 0.5,
-              color: '#5b8b6f',
-              background: '#e3efe7',
+              color: '#4a90e2',
+              background: '#eaf6ff',
               padding: '2px 8px',
               borderRadius: 999,
             }}
@@ -134,16 +134,16 @@ export function Overlay() {
       <footer
         style={{
           padding: '8px 14px',
-          background: '#fafafa',
+          background: '#f7fbff',
           borderTop: '1px solid #e1e5dd',
           fontSize: 11,
-          color: '#6b7280',
+          color: '#56778d',
           display: 'flex',
           justifyContent: 'space-between',
         }}
       >
         <span>Starter build — not yet connected to web</span>
-        <span style={{ color: '#5b8b6f', fontWeight: 600 }}>v0.0.1</span>
+        <span style={{ color: '#4a90e2', fontWeight: 600 }}>v0.0.1</span>
       </footer>
     </div>
   );

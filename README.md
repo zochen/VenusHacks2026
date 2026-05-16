@@ -1,4 +1,4 @@
-# QuietSpace
+# CapyConnect
 
 An accessibility platform for technical interviews, built as **two paired surfaces** that share UI, types, and business logic:
 

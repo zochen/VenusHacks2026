@@ -24,7 +24,7 @@ export function Options() {
       <header style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
         <span style={{ fontSize: 28 }}>🌿</span>
         <div>
-          <h1 style={{ margin: 0, fontSize: 24 }}>QuietSpace settings</h1>
+    <h1 style={{ margin: 0, fontSize: 24 }}>CapyConnect settings</h1>
           <p style={{ margin: '2px 0 0', color: '#6b7280', fontSize: 13 }}>Starter build — full editor coming soon.</p>
         </div>
       </header>
@@ -40,7 +40,7 @@ export function Options() {
       >
         <h2 style={{ margin: '0 0 8px', fontSize: 16 }}>Sync from the web app</h2>
         <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: 14, lineHeight: 1.5 }}>
-          Your communication-style preferences live on your QuietSpace web profile. The extension reads them once
+          Your communication-style preferences live on your CapyConnect web profile. The extension reads them once
           you're signed in. For now, manage them on the web:
         </p>
         <a
