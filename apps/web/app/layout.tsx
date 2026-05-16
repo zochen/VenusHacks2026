@@ -30,7 +30,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Link>
           <nav style={{ display: 'flex', gap: 24, fontSize: 14 }}>
             <Link href="/onboarding" style={{ color: '#2a2d33' }}>Onboarding</Link>
-            <Link href="/candidate/interview" style={{ color: '#2a2d33' }}>Candidate demo</Link>
+            <Link href="/candidate/dashboard" style={{ color: '#2a2d33' }}>My dashboard</Link>
+            <Link href="/candidate/interview" style={{ color: '#2a2d33' }}>Simulator</Link>
             <Link href="/interviewer/dashboard" style={{ color: '#2a2d33' }}>Interviewer</Link>
           </nav>
         </header>
