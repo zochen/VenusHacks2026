@@ -10,6 +10,8 @@
   "scripts": {
     "dev:web": "npm run dev --workspace apps/web",
     "dev:extension": "npm run dev --workspace apps/extension",
+    "dev:interview": "npm run dev --workspace apps/fake-interview",
+    "dev:relay": "npm run dev --workspace apps/relay",
     "build:all": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },

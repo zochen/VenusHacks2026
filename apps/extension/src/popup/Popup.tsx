@@ -10,11 +10,37 @@ import * as React from 'react';
 
 const WEB_URL = 'http://localhost:3000';
 const SUPPORTED_HOSTS = ['meet.google.com', 'zoom.us', 'teams.microsoft.com'];
+const DEFAULT_RELAY_URL = 'ws://localhost:8787';
 
 export function Popup() {
   const [activeHost, setActiveHost] = React.useState<string | null>(null);
   const [hostSupported, setHostSupported] = React.useState(false);
   const [demoStatus, setDemoStatus] = React.useState<string | null>(null);
+  const [roomCode, setRoomCode] = React.useState('');
+  const [relayUrl, setRelayUrl] = React.useState(DEFAULT_RELAY_URL);
+
+  React.useEffect(() => {
+    chrome.storage?.local?.get(['capyRoom', 'capyRelayUrl'], (v) => {
+      if (v.capyRoom) setRoomCode(String(v.capyRoom));
+      if (v.capyRelayUrl) setRelayUrl(String(v.capyRelayUrl));
+    });
+  }, []);
+
+  function saveRoom(code: string) {
+    const norm = code.trim().toUpperCase().slice(0, 8);
+    setRoomCode(norm);
+    chrome.storage?.local?.set({ capyRoom: norm });
+  }
+
+  function saveRelay(url: string) {
+    setRelayUrl(url);
+    chrome.storage?.local?.set({ capyRelayUrl: url });
+  }
+
+  function generateRoom() {
+    const code = Math.random().toString(36).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    saveRoom(code || 'CAPY01');
+  }
 
   React.useEffect(() => {
     chrome.tabs?.query({ active: true, currentWindow: true }, (tabs) => {
@@ -51,8 +77,13 @@ export function Popup() {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: injectCaptionDemo,
+        args: [{ room: roomCode || null, relayUrl: relayUrl || null }],
       });
-      setDemoStatus('Overlay added — grant mic permission on the page.');
+      setDemoStatus(
+        roomCode
+          ? `Overlay added — room ${roomCode}. Grant mic permission.`
+          : 'Overlay added — set a room code to sync with another machine.',
+      );
     } catch (e: any) {
       setDemoStatus(`Failed: ${e?.message ?? e}`);
     }
@@ -123,6 +154,64 @@ export function Popup() {
         >
           <strong style={{ display: 'block', color: '#2a2d33', marginBottom: 4 }}>Not signed in</strong>
           Sign in on the CapyConnect web app to sync your communication-style preferences here.
+        </div>
+
+        {/* Room pairing */}
+        <div
+          style={{
+            padding: 10,
+            background: '#f7fbff',
+            border: '1px solid #d6e4f0',
+            borderRadius: 12,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
+          }}
+        >
+          <label style={{ fontSize: 11, fontWeight: 600, color: '#2b6ea3' }}>
+            Pair with another device
+          </label>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input
+              value={roomCode}
+              onChange={(e) => saveRoom(e.target.value)}
+              placeholder="Room code"
+              style={{
+                flex: 1,
+                padding: '6px 10px',
+                border: '1px solid #d6e4f0',
+                borderRadius: 8,
+                fontSize: 13,
+                fontFamily: 'inherit',
+                textTransform: 'uppercase',
+                letterSpacing: 1,
+              }}
+            />
+            <button
+              type="button"
+              onClick={generateRoom}
+              title="Generate a random code"
+              style={{ ...secondaryButtonStyle, padding: '6px 10px', fontSize: 11 }}
+            >
+              ⟳
+            </button>
+          </div>
+          <input
+            value={relayUrl}
+            onChange={(e) => saveRelay(e.target.value)}
+            placeholder="Relay URL (ws://…)"
+            style={{
+              padding: '4px 8px',
+              border: '1px solid #d6e4f0',
+              borderRadius: 6,
+              fontSize: 11,
+              fontFamily: 'inherit',
+              color: '#56778d',
+            }}
+          />
+          <div style={{ fontSize: 10, color: '#6b7280' }}>
+            Both devices need the same code. Default relay runs at localhost:8787.
+          </div>
         </div>
 
         {/* Actions */}
@@ -215,13 +304,22 @@ const ghostButtonStyle: React.CSSProperties = {
 export default Popup;
 
 // Runs in the page (via chrome.scripting.executeScript). Must be self-contained.
-function injectCaptionDemo() {
+function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null }) {
   const HOST_ID = 'quietspace-demo-overlay';
+  const QHOST_ID = 'quietspace-demo-questions';
   const existing = document.getElementById(HOST_ID);
-  if (existing) {
-    existing.remove();
+  const existingQ = document.getElementById(QHOST_ID);
+  if (existing || existingQ) {
+    existing?.remove();
+    existingQ?.remove();
+    (window as any).__capyRelaySocket?.close?.();
+    (window as any).__capyRelaySocket = null;
     return;
   }
+  const room = opts?.room || null;
+  const relayUrl = opts?.relayUrl || 'ws://localhost:8787';
+  const clientId =
+    (crypto as any).randomUUID?.() ?? Math.random().toString(36).slice(2);
   const Ctor: any =
     (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
   if (!Ctor) {
@@ -235,32 +333,146 @@ function injectCaptionDemo() {
     'position:fixed;right:20px;bottom:20px;width:340px;background:#fff;border:1px solid #e1e5dd;border-radius:16px;box-shadow:0 12px 32px rgba(20,30,25,.18);font:14px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#2a2d33;z-index:2147483647;overflow:hidden;';
   host.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(135deg,#f4f8f5,#fff);border-bottom:1px solid #e1e5dd;">
-      <span style="font-weight:700;">🌿 QuietSpace · Captions</span>
+      <div>
+        <div style="font-weight:700;">🌿 CapyConnect · Captions</div>
+        <div id="qs-demo-room" style="font-size:10px;color:#6b7280;margin-top:2px;"></div>
+      </div>
       <button id="qs-demo-close" style="background:transparent;border:none;cursor:pointer;font-size:18px;color:#6b7280;">×</button>
     </div>
     <div id="qs-demo-status" style="padding:6px 14px;font-size:11px;color:#6b7280;">Click "Start" and allow microphone access.</div>
     <div id="qs-demo-captions" aria-live="polite" style="margin:8px 14px;padding:12px 14px;min-height:64px;background:rgba(20,30,25,.85);color:#fff;border-radius:10px;font-size:16px;line-height:1.4;">Waiting for speech…</div>
-    <div style="margin:8px 14px;">
-      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:4px;">
-        <span>Detected questions</span>
-        <span id="qs-demo-qcount" style="background:#e3efe7;color:#3d6a51;padding:1px 8px;border-radius:999px;font-size:10px;">0</span>
-      </div>
-      <ul id="qs-demo-questions" style="margin:0;padding:0;list-style:none;max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;font-size:13px;color:#2a2d33;"></ul>
-    </div>
     <div style="padding:10px 14px;display:flex;gap:8px;border-top:1px solid #e1e5dd;background:#fafafa;">
       <button id="qs-demo-start" style="flex:1;padding:8px 12px;background:#5b8b6f;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">🎙 Start</button>
       <button id="qs-demo-stop" style="flex:1;padding:8px 12px;background:#c45c5c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;" disabled>■ Stop</button>
     </div>
+    <div style="padding:10px 14px;display:flex;gap:6px;border-top:1px solid #e1e5dd;background:#f7fbff;">
+      <input id="qs-demo-text" type="text" placeholder="Type to test relay…" style="flex:1;padding:6px 10px;border:1px solid #d6e4f0;border-radius:6px;font:13px system-ui;outline:none;" />
+      <button id="qs-demo-send-cap" title="Send as caption" style="padding:6px 10px;background:#2b6ea3;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;">💬</button>
+      <button id="qs-demo-send-q" title="Send as question" style="padding:6px 10px;background:#8a5cf2;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;">❓</button>
+    </div>
   `;
   document.body.appendChild(host);
+
+  // Separate top-right panel for detected questions.
+  const qHost = document.createElement('div');
+  qHost.id = QHOST_ID;
+  qHost.style.cssText =
+    'position:fixed;top:20px;right:20px;width:320px;max-height:60vh;background:#fff;border:1px solid #e1e5dd;border-radius:16px;box-shadow:0 12px 32px rgba(20,30,25,.18);font:14px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#2a2d33;z-index:2147483647;overflow:hidden;display:flex;flex-direction:column;';
+  qHost.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(135deg,#eaf6ff,#fff);border-bottom:1px solid #e1e5dd;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-weight:700;">❓ Detected questions</span>
+        <span id="qs-demo-qcount" style="background:#eaf6ff;color:#2b6ea3;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;">0</span>
+      </div>
+      <button id="qs-demo-qclose" style="background:transparent;border:none;cursor:pointer;font-size:18px;color:#6b7280;">×</button>
+    </div>
+    <ul id="qs-demo-questions" style="margin:0;padding:10px 14px;list-style:none;overflow-y:auto;display:flex;flex-direction:column;gap:6px;font-size:13px;color:#2a2d33;flex:1;">
+      <li id="qs-demo-qempty" style="color:#6b7280;font-style:italic;font-size:12px;">No questions detected yet…</li>
+    </ul>
+  `;
+  document.body.appendChild(qHost);
 
   const status = host.querySelector('#qs-demo-status') as HTMLDivElement;
   const captions = host.querySelector('#qs-demo-captions') as HTMLDivElement;
   const startBtn = host.querySelector('#qs-demo-start') as HTMLButtonElement;
   const stopBtn = host.querySelector('#qs-demo-stop') as HTMLButtonElement;
   const closeBtn = host.querySelector('#qs-demo-close') as HTMLButtonElement;
-  const qList = host.querySelector('#qs-demo-questions') as HTMLUListElement;
-  const qCount = host.querySelector('#qs-demo-qcount') as HTMLSpanElement;
+  const qList = qHost.querySelector('#qs-demo-questions') as HTMLUListElement;
+  const qCount = qHost.querySelector('#qs-demo-qcount') as HTMLSpanElement;
+  const qClose = qHost.querySelector('#qs-demo-qclose') as HTMLButtonElement;
+  const qEmpty = qHost.querySelector('#qs-demo-qempty') as HTMLLIElement;
+  const roomLabel = host.querySelector('#qs-demo-room') as HTMLDivElement;
+
+  // ===== Relay (WebSocket room sync) =====
+  let ws: WebSocket | null = null;
+  let lastSentCaption = '';
+  let lastCaptionAt = 0;
+
+  function connectRelay() {
+    if (!room || !relayUrl) {
+      roomLabel.textContent = 'No room set (solo mode)';
+      return;
+    }
+    const url = `${relayUrl}/?room=${encodeURIComponent(room)}&id=${encodeURIComponent(clientId)}`;
+    roomLabel.textContent = `Connecting to room ${room}…`;
+    try {
+      ws = new WebSocket(url);
+    } catch (e: any) {
+      roomLabel.textContent = `Relay error: ${e?.message ?? e}`;
+      return;
+    }
+    (window as any).__capyRelaySocket = ws;
+    ws.addEventListener('open', () => {
+      roomLabel.textContent = `Connected · room ${room}`;
+    });
+    ws.addEventListener('close', () => {
+      roomLabel.textContent = `Disconnected · room ${room}`;
+    });
+    ws.addEventListener('error', () => {
+      roomLabel.textContent = `Relay error · room ${room}`;
+    });
+    ws.addEventListener('message', (ev) => {
+      let msg: any;
+      try { msg = JSON.parse(ev.data); } catch { return; }
+      if (!msg || msg.__from === clientId) return;
+      if (msg.type === '__presence') {
+        roomLabel.textContent = `Connected · room ${room} · ${msg.peers} peer${msg.peers === 1 ? '' : 's'}`;
+        return;
+      }
+      if (msg.type === 'question') {
+        recordQuestion(String(msg.text ?? ''), true);
+      } else if (msg.type === 'caption') {
+        renderRemoteCaption(String(msg.text ?? ''));
+      } else if (msg.type === 'interview') {
+        renderInterviewState(msg.payload);
+      } else if (msg.type === 'signal') {
+        flashSignal(String(msg.kind ?? 'note'), String(msg.label ?? ''));
+      }
+    });
+  }
+
+  function send(payload: any) {
+    if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
+  }
+
+  function renderRemoteCaption(text: string) {
+    if (!text.trim()) return;
+    captions.textContent = `🛰 ${text}`;
+    captions.style.background = 'rgba(43, 110, 163, 0.85)';
+    window.setTimeout(() => (captions.style.background = 'rgba(20,30,25,.85)'), 1500);
+  }
+
+  function renderInterviewState(payload: any) {
+    if (!payload?.currentQuestion) return;
+    // Treat the remote interview's currentQuestion as a detected question.
+    recordQuestion(String(payload.currentQuestion), true);
+  }
+
+  function flashSignal(kind: string, label: string) {
+    const tag = document.createElement('div');
+    tag.textContent = `🛰 ${label || kind}`;
+    tag.style.cssText =
+      'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#2b6ea3;color:#fff;padding:8px 16px;border-radius:999px;font:600 13px system-ui;z-index:2147483647;box-shadow:0 8px 24px rgba(0,0,0,.3);';
+    document.body.appendChild(tag);
+    window.setTimeout(() => tag.remove(), 2200);
+  }
+
+  // Watch window.capyconnectInterview for changes (set by the fake-interview page)
+  // and forward them to peers.
+  (function watchInterviewState() {
+    let lastSnapshot = '';
+    window.setInterval(() => {
+      const snap = (window as any).capyconnectInterview;
+      if (!snap) return;
+      const key = JSON.stringify(snap);
+      if (key === lastSnapshot) return;
+      lastSnapshot = key;
+      send({ type: 'interview', payload: snap });
+    }, 800);
+    window.addEventListener('capyconnect:question', (e: any) => {
+      send({ type: 'interview', payload: { currentQuestion: e.detail?.question, followUps: e.detail?.followUps } });
+    });
+  })();
 
   const QUESTION_WORDS = [
     'who', 'what', 'where', 'when', 'why', 'how', 'which', 'whose',
@@ -287,22 +499,24 @@ function injectCaptionDemo() {
   const seen = new Set<string>();
   let questionCount = 0;
 
-  function recordQuestion(q: string) {
+  function recordQuestion(q: string, remote = false) {
     const key = q.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
     if (!key || seen.has(key)) return;
     seen.add(key);
     questionCount++;
     qCount.textContent = String(questionCount);
+    if (qEmpty?.parentElement) qEmpty.remove();
     const li = document.createElement('li');
-    li.style.cssText =
-      'padding:6px 10px;background:#f4f8f5;border-left:3px solid #5b8b6f;border-radius:6px;line-height:1.35;';
-    li.textContent = q.endsWith('?') ? q : q + '?';
+    li.style.cssText = remote
+      ? 'padding:8px 10px;background:#f0e6ff;border-left:3px solid #8a5cf2;border-radius:6px;line-height:1.35;'
+      : 'padding:8px 10px;background:#eaf6ff;border-left:3px solid #4a90e2;border-radius:6px;line-height:1.35;';
+    li.textContent = (remote ? '🛰 ' : '') + (q.endsWith('?') ? q : q + '?');
     qList.prepend(li);
-    // Subtle flash
-    host.animate(
-      [{ boxShadow: '0 0 0 3px #5b8b6f' }, { boxShadow: '0 12px 32px rgba(20,30,25,.18)' }],
+    qHost.animate(
+      [{ boxShadow: `0 0 0 3px ${remote ? '#8a5cf2' : '#4a90e2'}` }, { boxShadow: '0 12px 32px rgba(20,30,25,.18)' }],
       { duration: 600 },
     );
+    if (!remote) send({ type: 'question', text: q });
   }
 
   let rec: any = null;
@@ -330,7 +544,16 @@ function injectCaptionDemo() {
           }
         }
       }
-      if (text.trim()) captions.textContent = text;
+      if (text.trim()) {
+        captions.textContent = text;
+        captions.style.background = 'rgba(20,30,25,.85)';
+        const now = Date.now();
+        if (text !== lastSentCaption && now - lastCaptionAt > 350) {
+          lastSentCaption = text;
+          lastCaptionAt = now;
+          send({ type: 'caption', text });
+        }
+      }
     };
     rec.onerror = (ev: any) => {
       status.textContent = `Error: ${ev.error}`;
@@ -375,5 +598,38 @@ function injectCaptionDemo() {
   closeBtn.addEventListener('click', () => {
     stop();
     host.remove();
+    qHost.remove();
+    try { ws?.close(); } catch {}
+    (window as any).__capyRelaySocket = null;
   });
+  qClose.addEventListener('click', () => qHost.remove());
+
+  const textInput = host.querySelector('#qs-demo-text') as HTMLInputElement;
+  const sendCapBtn = host.querySelector('#qs-demo-send-cap') as HTMLButtonElement;
+  const sendQBtn = host.querySelector('#qs-demo-send-q') as HTMLButtonElement;
+
+  function sendTestCaption() {
+    const v = textInput.value.trim();
+    if (!v) return;
+    captions.textContent = v;
+    captions.style.background = 'rgba(20,30,25,.85)';
+    send({ type: 'caption', text: v });
+    textInput.value = '';
+  }
+  function sendTestQuestion() {
+    const v = textInput.value.trim();
+    if (!v) return;
+    recordQuestion(v, false);
+    textInput.value = '';
+  }
+  sendCapBtn.addEventListener('click', sendTestCaption);
+  sendQBtn.addEventListener('click', sendTestQuestion);
+  textInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      if (e.shiftKey) sendTestQuestion();
+      else sendTestCaption();
+    }
+  });
+
+  connectRelay();
 }
