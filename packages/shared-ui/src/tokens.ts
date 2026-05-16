@@ -2,38 +2,41 @@
 // Surface: SHARED — consumed by Tailwind config (web) and inline styles (extension overlay)
 // Do not edit without coordinating in group chat.
 
-// TODO(Person 4): finalize the palette with the design lead — these are placeholders
-// TODO(Person 4): map these into apps/web/tailwind.config.ts via theme.extend
-// TODO(Person 4): decide on type scale + line heights for the 'focus' communication style
-// TODO(Person 4): export CSS variable strings for the extension overlay (shadow DOM friendly)
-
 export const tokens = {
   color: {
-    background: '#0f1115',
-    surface: '#1a1d24',
-    surfaceMuted: '#242833',
-    text: '#f5f6f8',
-    textMuted: '#9aa0ad',
-    accent: '#7cc4a0',
-    accentMuted: '#3a6d57',
-    danger: '#e57373',
+    background: '#faf7f2',
+    surface: '#ffffff',
+    surfaceMuted: '#eef2ed',
+    border: '#e1e5dd',
+    text: '#2a2d33',
+    textMuted: '#6b7280',
+    accent: '#5b8b6f',
+    accentSoft: '#a6c4b1',
+    accentMuted: '#e3efe7',
+    danger: '#d97a6c',
+    warning: '#e0b072',
   },
   radius: {
     sm: '6px',
-    md: '10px',
-    lg: '16px',
+    md: '12px',
+    lg: '20px',
     pill: '999px',
   },
   spacing: {
     xs: '4px',
     sm: '8px',
-    md: '12px',
-    lg: '20px',
-    xl: '32px',
+    md: '16px',
+    lg: '24px',
+    xl: '40px',
   },
   font: {
-    sans: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+    sans: '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
     mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+  },
+  shadow: {
+    sm: '0 1px 2px rgba(20, 30, 25, 0.06)',
+    md: '0 4px 12px rgba(20, 30, 25, 0.08)',
+    lg: '0 12px 32px rgba(20, 30, 25, 0.12)',
   },
 } as const;
 

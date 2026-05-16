@@ -3,23 +3,37 @@
 // Do not edit without coordinating in group chat.
 
 import * as React from 'react';
-
-// TODO(Person 1): emit pause / "need a moment" / repeat-question events to the host surface
-// TODO(Person 1): keyboard shortcuts (Space = pause, R = repeat)
-// TODO(Person 1): visual confirmation state after press
+import { tokens } from '../tokens';
+import { Button } from '../primitives/Button';
 
 export interface PauseProcessButtonsProps {
   onPause?: () => void;
   onRequestRepeat?: () => void;
   onNeedMoment?: () => void;
+  lastAction?: 'pause' | 'repeat' | 'moment' | null;
 }
 
-export function PauseProcessButtons(_props: PauseProcessButtonsProps) {
+export function PauseProcessButtons({ onPause, onRequestRepeat, onNeedMoment, lastAction }: PauseProcessButtonsProps) {
   return (
-    <div role="group" aria-label="Pause and process controls">
-      <button type="button">Pause</button>
-      <button type="button">Need a moment</button>
-      <button type="button">Repeat question</button>
+    <div
+      role="group"
+      aria-label="Pause and process controls"
+      style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing.sm }}
+    >
+      <Button variant="secondary" size="md" onClick={onNeedMoment} fullWidth>
+        ⏸  I need a moment
+      </Button>
+      <Button variant="secondary" size="md" onClick={onRequestRepeat} fullWidth>
+        🔁  Please repeat the question
+      </Button>
+      <Button variant="ghost" size="sm" onClick={onPause} fullWidth>
+        Pause the interview
+      </Button>
+      {lastAction && (
+        <div style={{ fontSize: 12, color: tokens.color.accent, textAlign: 'center', marginTop: 4 }}>
+          ✓ Sent to interviewer
+        </div>
+      )}
     </div>
   );
 }
