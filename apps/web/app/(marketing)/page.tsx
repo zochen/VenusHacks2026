@@ -221,17 +221,27 @@ export default function MarketingPage() {
           marginLeft: 'calc(50% - 50vw)',
           marginRight: 'calc(50% - 50vw)',
           lineHeight: 0,
+          background: '#ffffff',
+          marginTop: -120,
+          position: 'relative',
+          zIndex: 30,
         }}
       >
-        <svg data-invert xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 110 }}>
-          <path fill="#D8ECF0" fillOpacity="1" d="M0,256L48,234.7C96,213,192,171,288,165.3C384,160,480,192,576,213.3C672,235,768,245,864,229.3C960,213,1056,171,1152,165.3C1248,160,1344,192,1392,208L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
+        <svg data-invert xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 300 }}>
+          <path d="M0 297L15 294.8C30 292.7 60 288.3 90 287C120 285.7 150 287.3 180 290.2C210 293 240 297 270 295.8C300 294.7 330 288.3 360 285.2C390 282 420 282 450 281C480 280 510 278 540 276.5C570 275 600 274 630 278.2C660 282.3 690 291.7 720 297.3C750 303 780 305 810 304.7C840 304.3 870 301.7 885 300.3L900 299L900 451L885 451C870 451 840 451 810 451C780 451 750 451 720 451C690 451 660 451 630 451C600 451 570 451 540 451C510 451 480 451 450 451C420 451 390 451 360 451C330 451 300 451 270 451C240 451 210 451 180 451C150 451 120 451 90 451C60 451 30 451 15 451L0 451Z" fill="#9ac8f1"/>
+          <path d="M0 339L15 334.3C30 329.7 60 320.3 90 320.7C120 321 150 331 180 333.7C210 336.3 240 331.7 270 328C300 324.3 330 321.7 360 322.2C390 322.7 420 326.3 450 326.8C480 327.3 510 324.7 540 327C570 329.3 600 336.7 630 336C660 335.3 690 326.7 720 326.5C750 326.3 780 334.7 810 338.3C840 342 870 341 885 340.5L900 340L900 451L885 451C870 451 840 451 810 451C780 451 750 451 720 451C690 451 660 451 630 451C600 451 570 451 540 451C510 451 480 451 450 451C420 451 390 451 360 451C330 451 300 451 270 451C240 451 210 451 180 451C150 451 120 451 90 451C60 451 30 451 15 451L0 451Z" fill="#a9d6f0"/>
+          <path d="M0 366L15 368.2C30 370.3 60 374.7 90 374.2C120 373.7 150 368.3 180 364.3C210 360.3 240 357.7 270 358.2C300 358.7 330 362.3 360 363.7C390 365 420 364 450 365.8C480 367.7 510 372.3 540 374.5C570 376.7 600 376.3 630 374.5C660 372.7 690 369.3 720 366.3C750 363.3 780 360.7 810 361.8C840 363 870 368 885 370.5L900 373L900 451L885 451C870 451 840 451 810 451C780 451 750 451 720 451C690 451 660 451 630 451C600 451 570 451 540 451C510 451 480 451 450 451C420 451 390 451 360 451C330 451 300 451 270 451C240 451 210 451 180 451C150 451 120 451 90 451C60 451 30 451 15 451L0 451Z" fill="#bfe2ef"/>
+          <path d="M0 394L15 394.3C30 394.7 60 395.3 90 396C120 396.7 150 397.3 180 398.7C210 400 240 402 270 405.2C300 408.3 330 412.7 360 410.7C390 408.7 420 400.3 450 399.3C480 398.3 510 404.7 540 407.5C570 410.3 600 409.7 630 406.5C660 403.3 690 397.7 720 395.3C750 393 780 394 810 397.8C840 401.7 870 408.3 885 411.7L900 415L900 451L885 451C870 451 840 451 810 451C780 451 750 451 720 451C690 451 660 451 630 451C600 451 570 451 540 451C510 451 480 451 450 451C420 451 390 451 360 451C330 451 300 451 270 451C240 451 210 451 180 451C150 451 120 451 90 451C60 451 30 451 15 451L0 451Z" fill="#d8ecf0"/>
         </svg>
-        <div style={{ background: 'linear-gradient(180deg, #D8ECF0 0%, #D8ECF0 40%, rgba(216,236,240,0) 100%)', height: 260, marginBottom: -260, pointerEvents: 'none' }} />
       </div>
 
       {/* Why CapyConnect? — alternating flowing sections */}
       <section style={{ marginBottom: 48 }}>
-        <h2 className="capy-title" style={{ fontSize: 48, margin: '0 0 18px' }}>Why CapyConnect?</h2>
+        <div style={{ background: '#D8ECF0', width: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '18px 32px' }}>
+            <h2 className="capy-title" style={{ fontSize: 48, margin: 0 }}>Why CapyConnect?</h2>
+          </div>
+        </div>
 
         {/** Build a combined array so we can render six alternating sections */}
         {(() => {
@@ -258,14 +268,19 @@ export default function MarketingPage() {
                           boxSizing: 'border-box',
                           ...(idx === 0
                             ? {
+                                background: '#D8ECF0',
+                                width: '100vw',
+                                marginLeft: 'calc(50% - 50vw)',
+                                marginRight: 'calc(50% - 50vw)',
                                 alignItems: 'flex-start',
-                                paddingTop: pairIdx === 0 ? 0 : 60,
+                                paddingTop: pairIdx === 0 ? 0 : 24,
                                 justifyContent: 'flex-start',
+                                paddingLeft: 'max(28px, calc(50vw - 568px))',
                               }
                             : {}),
                           ...(idx === 1
                             ? {
-                                background: 'linear-gradient(180deg, #BDD2E4 0%, #BDD2E4 60%, rgba(189,210,228,0) 100%)',
+                                background: '#9ac8f1',
                                 width: '100vw',
                                 marginLeft: 'calc(50% - 50vw)',
                                 marginRight: 'calc(50% - 50vw)',
@@ -277,7 +292,7 @@ export default function MarketingPage() {
                             : {}),
                         }}
                       >
-                        <div style={{ maxWidth: 900, textAlign: idx === 0 ? 'left' : 'right' }}>
+                        <div style={{ maxWidth: 900, textAlign: idx === 0 ? 'left' : 'right', position: 'relative', zIndex: 50 }}>
                           <h3 className="capy-title" style={{ margin: '0 0 12px', fontSize: 28 }}>{s.title}</h3>
                           {s.title === 'Communication Support' ? (
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start', justifyContent: 'flex-end' }}>
@@ -292,11 +307,30 @@ export default function MarketingPage() {
                                   display: 'block',
                                   flex: '0 0 auto',
                                   marginLeft: 'auto',
-                                  transform: 'translateX(18px)',
+                                  transform: 'translate(18px, -80px)',
                                   position: 'relative',
                                   zIndex: 2,
                                 }}
                               />
+                            </div>
+                          ) : s.title === 'Flexible Interview Experience' ? (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start', justifyContent: 'flex-start' }}>
+                              <img
+                                src="/2.png"
+                                alt="Friendly capybara illustration"
+                                style={{
+                                  width: 280,
+                                  maxWidth: '100%',
+                                  background: 'transparent',
+                                  display: 'block',
+                                  flex: '0 0 auto',
+                                  marginRight: 'auto',
+                                  transform: 'translate(-200px, -80px)',
+                                  position: 'relative',
+                                  zIndex: 2,
+                                }}
+                              />
+                              <p style={{ margin: 0, color: '#345a73', fontSize: 18, lineHeight: 1.6, flex: '1 1 320px', textAlign: 'right' }}>{s.body}</p>
                             </div>
                           ) : (
                             <p style={{ margin: 0, color: '#345a73', fontSize: 18, lineHeight: 1.6 }}>{s.body}</p>
@@ -308,17 +342,21 @@ export default function MarketingPage() {
                           aria-hidden="true"
                           style={{
                             position: 'relative',
-                            zIndex: 3,
+                            zIndex: 31 + pairIdx * 2,
                             flex: '0 0 auto',
                             width: '100vw',
                             marginLeft: 'calc(50% - 50vw)',
                             marginRight: 'calc(50% - 50vw)',
                             lineHeight: 0,
-                            marginTop: pairIdx === 2 ? -170 : -120,
+                            marginTop: pairIdx === 2 ? -170 : pairIdx === 0 ? -180 : -120,
+                            background: '#D8ECF0',
                           }}
                         >
-                          <svg data-invert xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 80 }}>
-                            <path fill="#BDD2E4" fillOpacity="1" d="M0,64L60,74.7C120,85,240,107,360,101.3C480,96,600,64,720,48C840,32,960,32,1080,42.7C1200,53,1320,75,1380,85.3L1440,96L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z" />
+                          <svg data-invert xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 260 }}>
+                            <path d="M0 297L15 294.8C30 292.7 60 288.3 90 287C120 285.7 150 287.3 180 290.2C210 293 240 297 270 295.8C300 294.7 330 288.3 360 285.2C390 282 420 282 450 281C480 280 510 278 540 276.5C570 275 600 274 630 278.2C660 282.3 690 291.7 720 297.3C750 303 780 305 810 304.7C840 304.3 870 301.7 885 300.3L900 299L900 451L885 451C870 451 840 451 810 451C780 451 750 451 720 451C690 451 660 451 630 451C600 451 570 451 540 451C510 451 480 451 450 451C420 451 390 451 360 451C330 451 300 451 270 451C240 451 210 451 180 451C150 451 120 451 90 451C60 451 30 451 15 451L0 451Z" fill="#d8ecf0"/>
+                            <path d="M0 339L15 334.3C30 329.7 60 320.3 90 320.7C120 321 150 331 180 333.7C210 336.3 240 331.7 270 328C300 324.3 330 321.7 360 322.2C390 322.7 420 326.3 450 326.8C480 327.3 510 324.7 540 327C570 329.3 600 336.7 630 336C660 335.3 690 326.7 720 326.5C750 326.3 780 334.7 810 338.3C840 342 870 341 885 340.5L900 340L900 451L885 451C870 451 840 451 810 451C780 451 750 451 720 451C690 451 660 451 630 451C600 451 570 451 540 451C510 451 480 451 450 451C420 451 390 451 360 451C330 451 300 451 270 451C240 451 210 451 180 451C150 451 120 451 90 451C60 451 30 451 15 451L0 451Z" fill="#bfe2ef"/>
+                            <path d="M0 366L15 368.2C30 370.3 60 374.7 90 374.2C120 373.7 150 368.3 180 364.3C210 360.3 240 357.7 270 358.2C300 358.7 330 362.3 360 363.7C390 365 420 364 450 365.8C480 367.7 510 372.3 540 374.5C570 376.7 600 376.3 630 374.5C660 372.7 690 369.3 720 366.3C750 363.3 780 360.7 810 361.8C840 363 870 368 885 370.5L900 373L900 451L885 451C870 451 840 451 810 451C780 451 750 451 720 451C690 451 660 451 630 451C600 451 570 451 540 451C510 451 480 451 450 451C420 451 390 451 360 451C330 451 300 451 270 451C240 451 210 451 180 451C150 451 120 451 90 451C60 451 30 451 15 451L0 451Z" fill="#a9d6f0"/>
+                            <path d="M0 394L15 394.3C30 394.7 60 395.3 90 396C120 396.7 150 397.3 180 398.7C210 400 240 402 270 405.2C300 408.3 330 412.7 360 410.7C390 408.7 420 400.3 450 399.3C480 398.3 510 404.7 540 407.5C570 410.3 600 409.7 630 406.5C660 403.3 690 397.7 720 395.3C750 393 780 394 810 397.8C840 401.7 870 408.3 885 411.7L900 415L900 451L885 451C870 451 840 451 810 451C780 451 750 451 720 451C690 451 660 451 630 451C600 451 570 451 540 451C510 451 480 451 450 451C420 451 390 451 360 451C330 451 300 451 270 451C240 451 210 451 180 451C150 451 120 451 90 451C60 451 30 451 15 451L0 451Z" fill="#9ac8f1"/>
                           </svg>
                         </div>
                       )}
@@ -334,11 +372,17 @@ export default function MarketingPage() {
                     marginLeft: 'calc(50% - 50vw)',
                     marginRight: 'calc(50% - 50vw)',
                     lineHeight: 0,
-                    marginTop: pairIdx === 1 ? -72 : 0,
+                    marginTop: pairIdx === 1 ? -72 : -120,
+                    background: '#9ac8f1',
+                    position: 'relative',
+                    zIndex: 32 + pairIdx * 2,
                   }}
                 >
-                  <svg data-invert xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 90 }}>
-                    <path fill="#D8ECF0" fillOpacity="1" d="M0,256L48,234.7C96,213,192,171,288,165.3C384,160,480,192,576,213.3C672,235,768,245,864,229.3C960,213,1056,171,1152,165.3C1248,160,1344,192,1392,208L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
+                  <svg data-invert xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 300 }}>
+                    <path d="M0 297L15 294.8C30 292.7 60 288.3 90 287C120 285.7 150 287.3 180 290.2C210 293 240 297 270 295.8C300 294.7 330 288.3 360 285.2C390 282 420 282 450 281C480 280 510 278 540 276.5C570 275 600 274 630 278.2C660 282.3 690 291.7 720 297.3C750 303 780 305 810 304.7C840 304.3 870 301.7 885 300.3L900 299L900 451L885 451C870 451 840 451 810 451C780 451 750 451 720 451C690 451 660 451 630 451C600 451 570 451 540 451C510 451 480 451 450 451C420 451 390 451 360 451C330 451 300 451 270 451C240 451 210 451 180 451C150 451 120 451 90 451C60 451 30 451 15 451L0 451Z" fill="#9ac8f1"/>
+                    <path d="M0 339L15 334.3C30 329.7 60 320.3 90 320.7C120 321 150 331 180 333.7C210 336.3 240 331.7 270 328C300 324.3 330 321.7 360 322.2C390 322.7 420 326.3 450 326.8C480 327.3 510 324.7 540 327C570 329.3 600 336.7 630 336C660 335.3 690 326.7 720 326.5C750 326.3 780 334.7 810 338.3C840 342 870 341 885 340.5L900 340L900 451L885 451C870 451 840 451 810 451C780 451 750 451 720 451C690 451 660 451 630 451C600 451 570 451 540 451C510 451 480 451 450 451C420 451 390 451 360 451C330 451 300 451 270 451C240 451 210 451 180 451C150 451 120 451 90 451C60 451 30 451 15 451L0 451Z" fill="#a9d6f0"/>
+                    <path d="M0 366L15 368.2C30 370.3 60 374.7 90 374.2C120 373.7 150 368.3 180 364.3C210 360.3 240 357.7 270 358.2C300 358.7 330 362.3 360 363.7C390 365 420 364 450 365.8C480 367.7 510 372.3 540 374.5C570 376.7 600 376.3 630 374.5C660 372.7 690 369.3 720 366.3C750 363.3 780 360.7 810 361.8C840 363 870 368 885 370.5L900 373L900 451L885 451C870 451 840 451 810 451C780 451 750 451 720 451C690 451 660 451 630 451C600 451 570 451 540 451C510 451 480 451 450 451C420 451 390 451 360 451C330 451 300 451 270 451C240 451 210 451 180 451C150 451 120 451 90 451C60 451 30 451 15 451L0 451Z" fill="#bfe2ef"/>
+                    <path d="M0 394L15 394.3C30 394.7 60 395.3 90 396C120 396.7 150 397.3 180 398.7C210 400 240 402 270 405.2C300 408.3 330 412.7 360 410.7C390 408.7 420 400.3 450 399.3C480 398.3 510 404.7 540 407.5C570 410.3 600 409.7 630 406.5C660 403.3 690 397.7 720 395.3C750 393 780 394 810 397.8C840 401.7 870 408.3 885 411.7L900 415L900 451L885 451C870 451 840 451 810 451C780 451 750 451 720 451C690 451 660 451 630 451C600 451 570 451 540 451C510 451 480 451 450 451C420 451 390 451 360 451C330 451 300 451 270 451C240 451 210 451 180 451C150 451 120 451 90 451C60 451 30 451 15 451L0 451Z" fill="#d8ecf0"/>
                   </svg>
                   <div style={{ background: 'linear-gradient(180deg, #D8ECF0 0%, #D8ECF0 40%, rgba(216,236,240,0) 100%)', height: 260, marginBottom: -260, pointerEvents: 'none' }} />
                 </div>
@@ -352,8 +396,8 @@ export default function MarketingPage() {
           main { scroll-snap-type: none; }
           .pair { opacity: 0.02; transition: opacity 700ms ease; }
           .pair.in-view { opacity: 1; }
-          .panel { opacity: 0; transform: translateY(18px); transition: opacity 700ms ease, transform 700ms cubic-bezier(0.2,0.8,0.2,1); }
-          .pair.in-view .panel { opacity: 1; transform: translateY(0); }
+          .panel { opacity: 0; transition: opacity 700ms ease; }
+          .pair.in-view .panel { opacity: 1; }
           .panel > div { max-width: 960px; }
           .panel h3 { font-size: 36px; margin: 0 0 12px; }
           .panel p { font-size: 18px; color: #234154; line-height: 1.6; }
