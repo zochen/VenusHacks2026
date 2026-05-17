@@ -17,7 +17,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <header
+        <AuthProvider>
+          <header
           style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -27,26 +28,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             background: '#d0ddf0ff',
           }}
         >
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, fontWeight: 700, fontSize: 18, color: '#123244', textDecoration: 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <img className="site-logo" src="/CapyConnect_logo.png" alt="CapyConnect" />
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 0, fontWeight: 700, fontSize: 18, color: '#123244', textDecoration: 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0, height: '64px' }}>
+              <img className="site-logo-left" src="/capy_connect_capybara.png" alt="Capybara" />
+              <img className="site-logo-right" src="/capy_connect_writing.png" alt="Writing capybara" />
             </div>
             <span style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}>CapyConnect</span>
           </Link>
 
-          <nav style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
-            <a href="/download-extension" style={{ fontSize: 14, color: '#123244', textDecoration: 'none' }}>Download extension</a>
-            <Link href="/onboarding" style={{ fontSize: 14, color: '#123244', textDecoration: 'none' }}>Sign up</Link>
-            <Link href="/" style={{ fontSize: 14, color: '#123244', textDecoration: 'none' }}>About</Link>
-          </nav>
+          <HeaderNav />
         </header>
-        <style>{`
-          .site-logo { width: 96px; height: 96px; object-fit: contain; border-radius: 10px; display: block; }
-          @media (max-width: 900px) { .site-logo { width: 72px; height: 72px; } }
-          @media (max-width: 480px) { .site-logo { width: 48px; height: 48px; } }
+          <style>{`
+          .site-logo-left, .site-logo-right { height: 64px; width: auto; object-fit: cover; display: block; border-radius: 0; margin: 0; }
+          /* remove extra spacing so logos fill header height and stay centered */
+          header { align-items: center; }
+          /* ensure the two images sit flush with no gap */
+          .site-logo-left { margin-right: 0; }
+          @media (min-width: 1100px) { .site-logo-left, .site-logo-right { height: 96px; } }
+          @media (max-width: 900px) { .site-logo-left, .site-logo-right { height: 56px; } }
+          @media (max-width: 520px) { .site-logo-left, .site-logo-right { height: 40px; } }
           @media (max-width: 420px) { header { padding: 12px 16px; } }
         `}</style>
-        {children}
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
