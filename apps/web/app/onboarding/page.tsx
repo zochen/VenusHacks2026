@@ -22,6 +22,7 @@ export default function OnboardingPage() {
   const [step, setStep] = React.useState<Step>('role');
   const [role, setRole] = React.useState<Role>(null);
   const [info, setInfo] = React.useState<ProfileInfo>(EMPTY_INFO);
+  const [saveError, setSaveError] = React.useState('');
 
   const getSupabase = React.useCallback(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -33,7 +34,36 @@ export default function OnboardingPage() {
     });
   }, []);
 
+  async function getCurrentUserId() {
+    if (user?.id) {
+      return user.id;
+    }
+
+    const supabase = getSupabase();
+    if (!supabase) {
+      return null;
+    }
+
+    const {
+      data: { user: currentUser },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error) {
+      console.warn('Failed to resolve current Supabase user', error);
+    }
+
+    return currentUser?.id ?? null;
+  }
+
   async function handleInfoSubmit() {
+    setSaveError('');
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      setSaveError('We could not find your signed-in user. Please log in again before finishing onboarding.');
+      return;
+    }
+
     const profile = {
       fullName: info.fullName.trim(),
       username: info.username.trim(),
@@ -43,21 +73,28 @@ export default function OnboardingPage() {
     };
 
     const profileRow = {
-      user_id: user?.id,
+      user_id: userId,
       full_name: info.fullName.trim(),
       username: info.username.trim(),
       birthdate: info.birthdate,
       location: info.location.trim(),
       avatar_url: info.avatarDataUrl,
+      company: info.company?.trim() || null,
+      company_role: info.companyRole?.trim() || null,
       role: role ?? 'candidate',
     };
 
     const supabase = getSupabase();
-    if (user && supabase) {
+    if (supabase) {
       const { error } = await supabase.from('user_profiles').upsert(profileRow, { onConflict: 'user_id' });
       if (error) {
         console.warn('Failed to persist user profile to Supabase', error);
+        setSaveError(error.message);
+        return;
       }
+    } else {
+      setSaveError('Supabase is not configured. Check your environment variables.');
+      return;
     }
 
     try {
@@ -65,6 +102,7 @@ export default function OnboardingPage() {
       if (typeof document !== 'undefined') {
         document.cookie = `capyconnect.role=${encodeURIComponent(role ?? 'candidate')}; Path=/; SameSite=Lax`;
       }
+      localStorage.setItem('capyconnect.role', role ?? 'candidate');
     } catch {}
 
     // If the user is an interviewer, skip the communication style step and go to interviewer dashboard
@@ -78,18 +116,30 @@ export default function OnboardingPage() {
   }
 
   async function handleStyleSave(bundle: CommunicationStyle, features: string[]) {
+    setSaveError('');
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      setSaveError('We could not find your signed-in user. Please log in again before saving preferences.');
+      return;
+    }
+
     const prefs = {
-      user_id: user?.id,
+      user_id: userId,
       communication_style: bundle,
       ...derivePreferencesFromFeatures(features),
     };
 
     const supabase = getSupabase();
-    if (user && supabase) {
+    if (supabase) {
       const { error } = await supabase.from('user_preferences').upsert(prefs, { onConflict: 'user_id' });
       if (error) {
         console.warn('Failed to persist preferences to Supabase', error);
+        setSaveError(error.message);
+        return;
       }
+    } else {
+      setSaveError('Supabase is not configured. Check your environment variables.');
+      return;
     }
 
     router.push('/candidate/dashboard');
@@ -114,6 +164,12 @@ export default function OnboardingPage() {
       )}
 
       {step === 'style' && <BundlePicker onSave={handleStyleSave} />}
+
+      {saveError && (
+        <div style={{ maxWidth: 640, margin: '20px auto 0', padding: 12, borderRadius: 10, background: '#fee2e2', color: '#991b1b', fontSize: 14 }}>
+          {saveError}
+        </div>
+      )}
     </main>
   );
 }

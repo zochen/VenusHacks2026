@@ -5,6 +5,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../lib/AuthContext';
+import { createBrowserSupabaseClient } from '@quietspace/shared-lib';
 import { BasicInfoForm } from '../../../components/onboarding/BasicInfoForm';
 import { EMPTY_INFO, type ProfileInfo } from '../../../components/onboarding/data';
 
@@ -21,27 +22,94 @@ function loadProfile(): ProfileInfo {
 }
 
 export default function InterviewerProfilePage() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [info, setInfo] = React.useState<ProfileInfo>(EMPTY_INFO);
   const [savedAt, setSavedAt] = React.useState<number | null>(null);
   const [isEditing, setIsEditing] = React.useState(false);
 
-  React.useEffect(() => {
-    setInfo(loadProfile());
+  const getSupabase = React.useCallback(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return null;
+    }
+    return createBrowserSupabaseClient({
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    });
   }, []);
 
-  function handleSave() {
+  React.useEffect(() => {
+    const load = async () => {
+      if (isLoading) {
+        return;
+      }
+
+      if (!user) {
+        setInfo(loadProfile());
+        return;
+      }
+
+      const supabase = getSupabase();
+      if (!supabase) {
+        setInfo(loadProfile());
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error || !profile) {
+        console.warn('Failed to load interviewer profile from Supabase', error);
+        setInfo(EMPTY_INFO);
+        return;
+      }
+
+      setInfo({
+        ...EMPTY_INFO,
+        fullName: profile.full_name ?? '',
+        username: profile.username ?? '',
+        birthdate: profile.birthdate ?? '',
+        location: profile.location ?? '',
+        avatarDataUrl: profile.avatar_url ?? '',
+        company: profile.company ?? '',
+        companyRole: profile.company_role ?? '',
+      });
+    };
+
+    void load();
+  }, [user, isLoading, getSupabase]);
+
+  async function handleSave() {
     const profile = {
-      fullName: info.fullName.trim(),
+      full_name: info.fullName.trim(),
       username: info.username.trim(),
       birthdate: info.birthdate,
       location: info.location.trim(),
-      avatarDataUrl: info.avatarDataUrl,
-      company: (info as any).company,
-      companyRole: (info as any).companyRole,
+      avatar_url: info.avatarDataUrl,
+      company: info.company?.trim() || null,
+      company_role: info.companyRole?.trim() || null,
     };
+
+    const supabase = getSupabase();
+    if (user && supabase) {
+      const { error } = await supabase.from('user_profiles').upsert(
+        {
+          user_id: user.id,
+          ...profile,
+          role: 'interviewer',
+        },
+        { onConflict: 'user_id' }
+      );
+      if (error) {
+        console.warn('Failed to persist interviewer profile to Supabase', error);
+      }
+    }
+
     try {
-      localStorage.setItem('capyconnect.profile', JSON.stringify(profile));
+      document.cookie = 'capyconnect.role=interviewer; Path=/; SameSite=Lax';
+      localStorage.setItem('capyconnect.role', 'interviewer');
     } catch {}
     setSavedAt(Date.now());
     setIsEditing(false);
