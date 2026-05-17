@@ -108,6 +108,7 @@ export function HeaderNav() {
       return (
         <Link
           href={href}
+          className="capy-btn"
           style={{ ...base, ...hoverStyle }}
           onMouseEnter={() => setHover(true)}
           onMouseLeave={() => setHover(false)}
@@ -120,6 +121,7 @@ export function HeaderNav() {
     return (
       <button
         type="button"
+        className="capy-btn"
         onClick={onClick}
         style={{ ...base, ...hoverStyle, border: 'none', background: '#bfeaf0' }}
         onMouseEnter={() => setHover(true)}

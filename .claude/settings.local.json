@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npm run *)",
       "Bash(npm install *)",
-      "PowerShell(Get-NetFirewallRule *)"
+      "PowerShell(Get-NetFirewallRule *)",
+      "Bash(curl -v \"https://xzhbozefuygomzejxkvo.supabase.co/\" --max-time 10)"
     ]
   }
 }

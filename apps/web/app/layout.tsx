@@ -25,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             alignItems: 'center',
             padding: '16px 32px',
             borderBottom: '1px solid #e6eef6',
-            background: '#caf2f7ff',
+            background: '#ffffff',
           }}
         >
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 0, fontWeight: 700, fontSize: 18, color: '#123244', textDecoration: 'none' }}>
@@ -40,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
           <style>{`
           .site-logo-left, .site-logo-right { height: 64px; width: auto; object-fit: cover; display: block; border-radius: 0; margin: 0; }
+          .site-logo-right { transform: translate(-10px, -9px); }
           /* remove extra spacing so logos fill header height and stay centered */
           header { align-items: center; }
           /* ensure the two images sit flush with no gap */

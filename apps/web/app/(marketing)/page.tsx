@@ -71,19 +71,37 @@ export default function MarketingPage() {
       style={{
         display: 'flex',
         justifyContent: 'center',
-        marginBottom: 24,
+        marginBottom: -40,
         position: 'relative',
-        minHeight: 420,
+        minHeight: 300,
         overflow: 'visible',
       }}
     >        {/* Smooth ombre cloud behind the logo; aria-hidden since decorative */}
         <div className="logo-cloud" aria-hidden="true" />
-        <img className="hero-logo" src="/CapyConnect_logo.PNG" alt="CapyConnect" />
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: -56,
+            transform: 'translateX(-50%)',
+            width: '100vw',
+            height: 620,
+            background: 'linear-gradient(180deg, #88BECC 0%, #88BECC 65%, rgba(136,190,204,0) 100%)',
+            zIndex: 0,
+          }}
+        />
+        <img
+          className="hero-logo"
+          src="/capybara_bath.PNG"
+          alt="Capybaras relaxing in a hot spring with a job listing"
+          style={{ position: 'relative', zIndex: 1 }}
+        />
       </div>
       {/* Hero Section */}
       <section style={{ display: 'grid', gridTemplateColumns: '1fr 480px', gap: 32, alignItems: 'center', marginBottom: 64 }}>
         <div>
-          <h1 style={{ fontSize: 48, lineHeight: 1.05, margin: '0 0 20px', fontWeight: 800 }}>
+          <h1 className="capy-title" style={{ fontSize: 48, lineHeight: 1.05, margin: '0 0 20px', fontWeight: 800 }}>
             Behavioral interviews redesigned for clarity, comfort, and focus.
           </h1>
           <p style={{ fontSize: 18, color: '#56778d', margin: '0 0 18px' }}>
@@ -101,6 +119,7 @@ export default function MarketingPage() {
           <div style={{ display: 'flex', gap: 12 }}>
             <Link
               href="/candidate/interview"
+              className="capy-btn"
               style={{
                 padding: '14px 22px',
                 background: '#4a90e2',
@@ -116,6 +135,7 @@ export default function MarketingPage() {
 
             <Link
               href="/onboarding"
+              className="capy-btn"
               style={{
                 padding: '14px 22px',
                 background: '#fff',
@@ -169,31 +189,20 @@ export default function MarketingPage() {
         })()}
 
         {/* pair/panel layout + fade-in styles */}
-        <style>{`
-          /* make main snap to each pair block */
+        <style dangerouslySetInnerHTML={{ __html: `
           main { scroll-snap-type: y mandatory; }
           section.pair { scroll-snap-align: start; }
-
-          /* pair visibility — keep next pairs hidden until scrolled into view */
           .pair { opacity: 0.02; transition: opacity 700ms ease; }
           .pair.in-view { opacity: 1; }
-
-          /* panels (each half-viewport) transition in when their pair is in view */
           .panel { opacity: 0; transform: translateY(18px); transition: opacity 700ms ease, transform 700ms cubic-bezier(0.2,0.8,0.2,1); }
           .pair.in-view .panel { opacity: 1; transform: translateY(0); }
-
-          /* visual sizing and typography for the large text sections */
           .panel > div { max-width: 960px; }
           .panel h3 { font-size: 36px; margin: 0 0 12px; }
           .panel p { font-size: 18px; color: #234154; line-height: 1.6; }
-
-          /* ensure smooth aesthetic: center content vertically and avoid bleed into next pair */
           .pair-inner { height: 100%; display: flex; flex-direction: column; }
           .panel { display: flex; align-items: center; justify-content: center; padding: 48px 24px; box-sizing: border-box; }
-
-          /* subtle page background to help the ombre blend */
           body { background: #fbfeff; }
-        `}</style>
+        ` }} />
 
         {/* IntersectionObserver set up in a client-side effect */}
         <script>{`/* placeholder - handled in React useEffect */`}</script>
@@ -201,9 +210,9 @@ export default function MarketingPage() {
 
       {/* Footer CTA */}
       <section style={{ marginTop: 56, padding: 28, borderRadius: 12, background: '#f7fbff', textAlign: 'center' }}>
-        <h3 style={{ margin: '0 0 8px', fontSize: 20 }}>Ready to try a better interview experience?</h3>
+        <h3 className="capy-title" style={{ margin: '0 0 8px', fontSize: 20 }}>Ready to try a better interview experience?</h3>
         <div style={{ marginTop: 12 }}>
-          <Link href="/candidate/interview" style={{ padding: '12px 20px', background: '#4a90e2', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 700 }}>Try Interactive Demo</Link>
+          <Link href="/candidate/interview" className="capy-btn" style={{ padding: '12px 20px', background: '#4a90e2', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 700 }}>Try Interactive Demo</Link>
         </div>
       </section>
     </main>
