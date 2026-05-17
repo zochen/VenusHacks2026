@@ -47,18 +47,19 @@ const extras = [
 export default function MarketingPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const els = Array.from(document.querySelectorAll('.wc-section')) as HTMLElement[];
+    const els = Array.from(document.querySelectorAll('.pair')) as HTMLElement[];
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
           const el = e.target as HTMLElement;
           if (e.isIntersecting) {
             el.classList.add('in-view');
-            obs.unobserve(el);
+            // keep observing so fade can re-run if user scrolls back
+            // but we don't need to unobserve immediately
           }
         });
       },
-      { threshold: 0.12 }
+      { threshold: 0.08 }
     );
     els.forEach((el) => obs.observe(el));
     return () => obs.disconnect();
@@ -144,103 +145,54 @@ export default function MarketingPage() {
         <h2 style={{ fontSize: 28, margin: '0 0 18px' }}>Why CapyConnect?</h2>
 
         {/** Build a combined array so we can render six alternating sections */}
-        {([...featureCols, ...extras] as { title: string; body: string }[]).map((s, idx) => {
-          const isEven = idx % 2 === 0;
-          const bg = isEven
-            ? 'linear-gradient(180deg, rgba(74,144,226,0.06), rgba(74,144,226,0.02))'
-            : 'linear-gradient(180deg, rgba(74,144,226,0.04), rgba(74,144,226,0.01))';
-          const textAlign = isEven ? 'left' : 'right';
-          return (
-            <section
-              key={s.title}
-              className="wc-section"
-              data-idx={idx}
-              style={{
-                marginBottom: 28,
-                padding: '28px 24px',
-                borderRadius: 16,
-                background: bg,
-                position: 'relative',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 24,
-                flexDirection: isEven ? 'row' : 'row-reverse',
-              }}
-            >
-              {/* Decorative floating bubbles */}
-              <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-                <div className="bubble b1" />
-                <div className="bubble b2" />
-                <div className="bubble b3" />
-              </div>
+        {(() => {
+          const all = [...featureCols, ...extras] as { title: string; body: string }[];
+          const pairs: Array<{ top: any; bottom: any }> = [];
+          for (let i = 0; i < all.length; i += 2) {
+            pairs.push({ top: all[i], bottom: all[i + 1] });
+          }
 
-              <div style={{ flex: '1 1 55%', textAlign, zIndex: 2 }}>
-                <h3 style={{ margin: '0 0 10px', fontSize: 20 }}>{s.title}</h3>
-                <p style={{ margin: 0, color: '#345a73', lineHeight: 1.6 }}>{s.body}</p>
-              </div>
-
-              <div style={{ flex: '0 0 40%', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {/* Placeholder for illustration; keep light and non-rigid */}
-                <div style={{ width: '84%', height: 160, borderRadius: 12, background: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#56778d', boxShadow: '0 6px 18px rgba(18,50,68,0.06)' }}>
-                  <div style={{ textAlign: 'center' }}>{/* simple icon + note */}
-                    <div style={{ fontSize: 28 }}>{idx % 2 === 0 ? '💬' : '🧭'}</div>
-                    <div style={{ fontSize: 13, marginTop: 6 }}>Illustration</div>
+          return pairs.map((p, pairIdx) => (
+            <section key={`pair-${pairIdx}`} className="pair" style={{ height: '100vh', overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+              <div className="pair-inner" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                {[p.top, p.bottom].map((s, idx) => (
+                  <div key={s.title} className="panel" style={{ flex: '1 1 50vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 28px', boxSizing: 'border-box' }}>
+                    <div style={{ maxWidth: 900, textAlign: idx === 0 ? 'left' : 'right' }}>
+                      <h3 style={{ margin: '0 0 12px', fontSize: 28 }}>{s.title}</h3>
+                      <p style={{ margin: 0, color: '#345a73', fontSize: 18, lineHeight: 1.6 }}>{s.body}</p>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             </section>
-          );
-        })}
+          ));
+        })()}
 
-        {/* fade-in + bubble animation styles */}
+        {/* pair/panel layout + fade-in styles */}
         <style>{`
-          .wc-section { opacity: 0; transform: translateY(18px); transition: opacity 700ms ease, transform 700ms cubic-bezier(0.2,0.8,0.2,1); }
-          .wc-section.in-view { opacity: 1; transform: translateY(0); }
-          .bubble { position: absolute; border-radius: 999px; filter: blur(10px); }
-          .bubble.b1 { width: 140px; height: 140px; background: rgba(74,144,226,0.08); left: -20px; top: -10px; animation: float1 8s ease-in-out infinite; }
-          .bubble.b2 { width: 80px; height: 80px; background: rgba(74,144,226,0.06); right: 10%; top: 30%; animation: float2 10s ease-in-out infinite; }
-          .bubble.b3 { width: 60px; height: 60px; background: rgba(74,144,226,0.05); left: 20%; bottom: -10%; animation: float3 12s ease-in-out infinite; }
-          @keyframes float1 { 0%{ transform: translateY(0) } 50%{ transform: translateY(8px) } 100%{ transform: translateY(0) } }
-          @keyframes float2 { 0%{ transform: translateY(0) } 50%{ transform: translateY(-6px) } 100%{ transform: translateY(0) } }
-          @keyframes float3 { 0%{ transform: translateY(0) } 50%{ transform: translateY(10px) } 100%{ transform: translateY(0) } }
+          /* make main snap to each pair block */
+          main { scroll-snap-type: y mandatory; }
+          section.pair { scroll-snap-align: start; }
 
-          /* Hero logo and ombre cloud */
-          .logo-cloud {
-            position: absolute;
-            z-index: 1;
-            top: 0;
-            width: 80%;
-            max-width: 900px;
-            height: 420px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-radius: 999px;
+          /* pair visibility — keep next pairs hidden until scrolled into view */
+          .pair { opacity: 0.02; transition: opacity 700ms ease; }
+          .pair.in-view { opacity: 1; }
 
-            background:
-              radial-gradient(
-                ellipse at center,
-                rgba(74,144,226,0.35) 0%,
-                rgba(74,144,226,0.18) 35%,
-                rgba(74,144,226,0.08) 55%,
-                rgba(255,255,255,0) 80%
-              );
+          /* panels (each half-viewport) transition in when their pair is in view */
+          .panel { opacity: 0; transform: translateY(18px); transition: opacity 700ms ease, transform 700ms cubic-bezier(0.2,0.8,0.2,1); }
+          .pair.in-view .panel { opacity: 1; transform: translateY(0); }
 
-            filter: blur(10px);
-            opacity: 1;
-            pointer-events: none;
-          }
+          /* visual sizing and typography for the large text sections */
+          .panel > div { max-width: 960px; }
+          .panel h3 { font-size: 36px; margin: 0 0 12px; }
+          .panel p { font-size: 18px; color: #234154; line-height: 1.6; }
 
-          .hero-logo { position: relative; z-index: 2; width: 320px; height: 320px; object-fit: contain; border-radius: 28px; }
-          @media (min-width: 1200px) { .hero-logo { width: 420px; height: 420px; } }
-          @media (max-width: 900px) { .hero-logo { width: 260px; height: 260px; } .logo-cloud { height: 320px; } }
-          @media (max-width: 520px) { .hero-logo { width: 180px; height: 180px; } .logo-cloud { height: 220px; width: 92%; top: 6px; } }
+          /* ensure smooth aesthetic: center content vertically and avoid bleed into next pair */
+          .pair-inner { height: 100%; display: flex; flex-direction: column; }
+          .panel { display: flex; align-items: center; justify-content: center; padding: 48px 24px; box-sizing: border-box; }
 
-          @keyframes breathe {
-            0% { transform: translateX(-50%) scale(1); opacity: 0.94; }
-            50% { transform: translateX(-50%) scale(1.035); opacity: 1; }
-            100% { transform: translateX(-50%) scale(1); opacity: 0.94; }
-          }
+          /* subtle page background to help the ombre blend */
+          body { background: #fbfeff; }
         `}</style>
 
         {/* IntersectionObserver set up in a client-side effect */}
