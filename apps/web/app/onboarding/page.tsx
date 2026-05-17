@@ -11,11 +11,13 @@ import { BasicInfoForm } from '../../components/onboarding/BasicInfoForm';
 import { BundlePicker } from '../../components/onboarding/BundlePicker';
 import { EMPTY_INFO, derivePreferencesFromFeatures, type ProfileInfo } from '../../components/onboarding/data';
 
-type Step = 'info' | 'style';
+type Step = 'role' | 'info' | 'style';
+type Role = 'candidate' | 'interviewer' | null;
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [step, setStep] = React.useState<Step>('info');
+  const [step, setStep] = React.useState<Step>('role');
+  const [role, setRole] = React.useState<Role>(null);
   const [info, setInfo] = React.useState<ProfileInfo>(EMPTY_INFO);
 
   function handleInfoSubmit() {
@@ -25,10 +27,30 @@ export default function OnboardingPage() {
       birthdate: info.birthdate,
       location: info.location.trim(),
       avatarDataUrl: info.avatarDataUrl,
+      // optional interviewer fields
+      company: (info as any).company ?? undefined,
+      companyRole: (info as any).companyRole ?? undefined,
     };
+    try {
+      // persist role along with basic profile info
+      localStorage.setItem('capyconnect.role', role ?? 'candidate');
+    } catch {}
+    try {
+      // also set a cookie so server-side middleware can enforce role-based routing
+      if (typeof document !== 'undefined') {
+        document.cookie = `capyconnect.role=${encodeURIComponent(role ?? 'candidate')}; Path=/; SameSite=Lax`;
+      }
+    } catch {}
     try {
       localStorage.setItem('capyconnect.profile', JSON.stringify(profile));
     } catch {}
+    // If the user is an interviewer, skip the communication style step and go to interviewer dashboard
+    if (role === 'interviewer') {
+      try {
+        router.push('/interviewer/dashboard');
+        return;
+      } catch {}
+    }
     setStep('style');
   }
 
@@ -46,10 +68,20 @@ export default function OnboardingPage() {
 
   return (
     <main style={{ maxWidth: 1080, margin: '0 auto', padding: '40px 32px' }}>
-      <StepIndicator step={step} onJumpToInfo={() => setStep('info')} />
+      {/* Hide the step indicator while role picking */}
+      {step !== 'role' && <StepIndicator step={step} onJumpToInfo={() => setStep('info')} role={role} />}
+
+      {step === 'role' && (
+        <RolePicker
+          onChoose={(r) => {
+            setRole(r);
+            setStep('info');
+          }}
+        />
+      )}
 
       {step === 'info' && (
-        <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleInfoSubmit} mode="create" />
+        <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleInfoSubmit} mode="create" role={role} />
       )}
 
       {step === 'style' && <BundlePicker onSave={handleStyleSave} />}
@@ -57,11 +89,14 @@ export default function OnboardingPage() {
   );
 }
 
-function StepIndicator({ step, onJumpToInfo }: { step: Step; onJumpToInfo: () => void }) {
-  const steps = [
-    { id: 'info' as Step, label: 'Your profile' },
-    { id: 'style' as Step, label: 'Communication style' },
-  ];
+function StepIndicator({ step, onJumpToInfo, role }: { step: Step; onJumpToInfo: () => void; role?: Role | null }) {
+  // If role is interviewer, hide the Communication style step
+  const steps = role === 'interviewer'
+    ? [{ id: 'info' as Step, label: 'Your profile' }]
+    : [
+        { id: 'info' as Step, label: 'Your profile' },
+        { id: 'style' as Step, label: 'Communication style' },
+      ];
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, marginBottom: 32 }}>
       {steps.map((s, idx) => {
@@ -113,6 +148,57 @@ function StepIndicator({ step, onJumpToInfo }: { step: Step; onJumpToInfo: () =>
           </React.Fragment>
         );
       })}
+    </div>
+  );
+}
+
+function RolePicker({ onChoose }: { onChoose: (r: Role) => void }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, paddingTop: 40 }}>
+      <h2 className="capy-title" style={{ fontSize: 28, margin: 0 }}>Who are you?</h2>
+      <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
+        <button
+          type="button"
+          onClick={() => onChoose('candidate')}
+          style={{
+            all: 'unset',
+            cursor: 'pointer',
+            padding: '18px 28px',
+            borderRadius: 14,
+            border: '1px solid rgba(45, 55, 72, 0.08)',
+            background: '#fff',
+            boxShadow: '0 1px 2px rgba(20,30,25,0.04)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            minWidth: 180,
+          }}
+        >
+          <div style={{ fontSize: 28 }}>👤</div>
+          <div className="capy-title" style={{ marginTop: 10, fontSize: 20, fontWeight: 600 }}>Candidate</div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onChoose('interviewer')}
+          style={{
+            all: 'unset',
+            cursor: 'pointer',
+            padding: '18px 28px',
+            borderRadius: 14,
+            border: '1px solid rgba(45, 55, 72, 0.08)',
+            background: '#fff',
+            boxShadow: '0 1px 2px rgba(20,30,25,0.04)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            minWidth: 180,
+          }}
+        >
+          <div style={{ fontSize: 28 }}>💼</div>
+          <div className="capy-title" style={{ marginTop: 10, fontSize: 20, fontWeight: 600 }}>Interviewer</div>
+        </button>
+      </div>
     </div>
   );
 }

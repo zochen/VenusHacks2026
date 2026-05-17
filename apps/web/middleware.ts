@@ -44,6 +44,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
+  // Enforce role-based access: read role from cookies (set by onboarding or client profile save)
+  const roleCookie = cookieStore.get('capyconnect.role')?.value ?? null;
+  // If user is a candidate but trying to access interviewer routes, redirect
+  if (roleCookie === 'candidate' && pathname.startsWith('/interviewer')) {
+    return NextResponse.redirect(new URL('/candidate/dashboard', request.url));
+  }
+  // If user is an interviewer but trying to access candidate routes, redirect
+  if (roleCookie === 'interviewer' && pathname.startsWith('/candidate')) {
+    return NextResponse.redirect(new URL('/interviewer/dashboard', request.url));
+  }
+
   // If user is logged in and trying to access auth pages, redirect to dashboard
   if (session && pathname.startsWith('/auth/login')) {
     return NextResponse.redirect(new URL('/candidate/dashboard', request.url));
