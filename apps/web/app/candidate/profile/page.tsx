@@ -84,6 +84,30 @@ export default function CandidateProfilePage() {
     setHydrated(true);
   }, []);
 
+  // Expose a global save function for the header to call and inform header when editing
+  React.useEffect(() => {
+    if (isEditing) {
+      (window as any).capyProfileSave = () => {
+        const form = document.getElementById('candidate-profile-form') as HTMLFormElement | null;
+        if (form && typeof form.requestSubmit === 'function') {
+          form.requestSubmit();
+        }
+      };
+      window.dispatchEvent(new CustomEvent('capy:profileEditing', { detail: { isEditing: true } }));
+    } else {
+      try {
+        if ((window as any).capyProfileSave) delete (window as any).capyProfileSave;
+      } catch {}
+      window.dispatchEvent(new CustomEvent('capy:profileEditing', { detail: { isEditing: false } }));
+    }
+    return () => {
+      try {
+        if ((window as any).capyProfileSave) delete (window as any).capyProfileSave;
+      } catch {}
+      window.dispatchEvent(new CustomEvent('capy:profileEditing', { detail: { isEditing: false } }));
+    };
+  }, [isEditing]);
+
   function handleProfileSave() {
     const profile = {
       fullName: info.fullName.trim(),
@@ -103,6 +127,7 @@ export default function CandidateProfilePage() {
       } catch {}
     } catch {}
     setProfileSavedAt(Date.now());
+    setIsEditing(false);
   }
 
   function handlePreferencesSave(bundle: CommunicationStyle, features: string[]) {
@@ -158,30 +183,11 @@ export default function CandidateProfilePage() {
       <Tabs tab={tab} onChange={setTab} hidePreferences={role === 'interviewer'} />
 
       <div style={{ marginTop: 24 }}>
-        {isEditing ? (
-          <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleProfileSave} mode="edit" savedAt={profileSavedAt} role={role} />
-        ) : (
-          tab === 'profile' && (
-            <div>
-              <div style={{ display: 'flex', gap: 24, alignItems: 'center', marginBottom: 18 }}>
-                <div style={{ width: 96, height: 96, borderRadius: '50%', background: info.avatarDataUrl ? `url(${info.avatarDataUrl}) center/cover no-repeat` : '#eef2ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 700 }}>
-                  {!info.avatarDataUrl && (info.fullName.trim()[0]?.toUpperCase() ?? '🌿')}
-                </div>
-                <div>
-                  <div style={{ fontSize: 20, fontWeight: 700 }}>{info.fullName || '—'}</div>
-                  <div style={{ color: '#6b7280' }}>@{info.username || '—'}</div>
-                  <div style={{ marginTop: 8, color: '#6b7280' }}>Email: {user?.email ?? '—'}</div>
-                  <div style={{ marginTop: 6, color: '#6b7280' }}>Location: {info.location || '—'}</div>
-                  <div style={{ marginTop: 6, color: '#6b7280' }}>Birthdate: {info.birthdate || '—'}</div>
-                  {role === 'interviewer' && (
-                    <>
-                      <div style={{ marginTop: 6, color: '#6b7280' }}>Company: {(info as any).company || '—'}</div>
-                      <div style={{ marginTop: 6, color: '#6b7280' }}>Role: {(info as any).companyRole || '—'}</div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
+        {tab === 'profile' && (
+          isEditing ? (
+            <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleProfileSave} mode="edit" savedAt={profileSavedAt} role={role} formId="candidate-profile-form" />
+          ) : (
+            <BasicInfoForm info={info} onChange={setInfo} onSubmit={() => {}} mode="edit" savedAt={profileSavedAt} role={role} readOnly formId="candidate-profile-form" />
           )
         )}
 

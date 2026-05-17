@@ -81,7 +81,7 @@ export default function OnboardingPage() {
       )}
 
       {step === 'info' && (
-        <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleInfoSubmit} mode="create" role={role} />
+        <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleInfoSubmit} mode="create" role={role} showPasswordFields={false} />
       )}
 
       {step === 'style' && <BundlePicker onSave={handleStyleSave} />}

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../lib/AuthContext';
 import { createBrowserClient } from '@supabase/ssr';
@@ -17,6 +17,42 @@ export function HeaderNav() {
       const raw = localStorage.getItem('capyconnect.role');
       setRole((raw as any) ?? null);
     } catch {}
+  }, []);
+
+  // read pathname so we can prefer the dashboard context when deciding
+  // which profile link to show (this ensures the header on each dashboard
+  // points to its matching profile page even if localStorage role is unset)
+  const pathname = usePathname();
+
+  const inferredRoleFromPath = React.useMemo(() => {
+    try {
+      if (!pathname) return null;
+      if (pathname.startsWith('/interviewer')) return 'interviewer';
+      if (pathname.startsWith('/candidate')) return 'candidate';
+      return null;
+    } catch {
+      return null;
+    }
+  }, [pathname]);
+
+  // Listen for profile editing events from profile pages so the header can
+  // switch the Profile button into a Save button that triggers the form.
+  const [profileIsEditing, setProfileIsEditing] = React.useState(false);
+
+  React.useEffect(() => {
+    function onEditing(e: Event) {
+      try {
+        // custom event with detail { isEditing: boolean }
+        const ev = e as CustomEvent<{ isEditing: boolean }>;
+        setProfileIsEditing(Boolean(ev.detail?.isEditing));
+      } catch {
+        setProfileIsEditing(false);
+      }
+    }
+    window.addEventListener('capy:profileEditing', onEditing as EventListener);
+    return () => {
+      window.removeEventListener('capy:profileEditing', onEditing as EventListener);
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -94,8 +130,9 @@ export function HeaderNav() {
     );
   }
 
-  const dashboardHref = role === 'interviewer' ? '/interviewer/dashboard' : '/candidate/dashboard';
-  const profileHref = role === 'interviewer' ? '/interviewer/profile' : '/candidate/profile';
+  const effectiveRole = inferredRoleFromPath ?? role ?? 'candidate';
+  const dashboardHref = effectiveRole === 'interviewer' ? '/interviewer/dashboard' : '/candidate/dashboard';
+  const profileHref = effectiveRole === 'interviewer' ? '/interviewer/profile' : '/candidate/profile';
 
   return (
     <nav style={{ display: 'flex', gap: 12, fontSize: 14, alignItems: 'center' }}>
@@ -103,7 +140,23 @@ export function HeaderNav() {
         <>
           <StyledAction href={dashboardHref}>My Dashboard</StyledAction>
           <StyledAction href="/download-extension">Download Extension</StyledAction>
-          <StyledAction href={profileHref}>Profile</StyledAction>
+          {profileIsEditing ? (
+            <StyledAction
+              onClick={() => {
+                try {
+                  // call global save handler registered by the profile page
+                  (window as any).capyProfileSave?.();
+                } catch {
+                  // fall back to navigating to profile
+                  window.location.href = profileHref;
+                }
+              }}
+            >
+              Save
+            </StyledAction>
+          ) : (
+            <StyledAction href={profileHref}>Profile</StyledAction>
+          )}
           <StyledAction onClick={handleLogout}>Log Out</StyledAction>
         </>
       ) : (

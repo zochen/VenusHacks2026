@@ -14,10 +14,13 @@ export interface BasicInfoFormProps {
   onSubmit: () => void;
   mode?: 'create' | 'edit';
   role?: 'candidate' | 'interviewer' | null;
+  readOnly?: boolean;
+  formId?: string;
   title?: string;
   subtitle?: string;
   submitLabel?: string;
   savedAt?: number | null;
+  showPasswordFields?: boolean;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -36,11 +39,14 @@ export function BasicInfoForm({
   onChange,
   onSubmit,
   mode = 'create',
+  role = null,
+  readOnly = false,
+  formId,
   title,
   subtitle,
   submitLabel,
   savedAt,
-  role = null,
+  showPasswordFields = true,
 }: BasicInfoFormProps) {
   const fileRef = React.useRef<HTMLInputElement>(null);
   const [errors, setErrors] = React.useState<Partial<Record<keyof ProfileInfo, string>>>({});
@@ -49,7 +55,8 @@ export function BasicInfoForm({
   const headerTitle = title ?? (isEdit ? 'Your profile' : 'Set up your profile');
   const headerSubtitle =
     subtitle ?? (isEdit ? 'Update any field, then save your changes.' : 'A few basics so we can save your preferences and invite you to interviews.');
-  const buttonLabel = submitLabel ?? (isEdit ? 'Save changes' : 'Continue to communication style →');
+  // Interviewers should see a Continue to Dashboard button during onboarding
+  const buttonLabel = submitLabel ?? (isEdit ? 'Save changes' : role === 'interviewer' ? 'Continue to Dashboard' : 'Continue to communication style →');
 
   function set<K extends keyof ProfileInfo>(key: K, value: ProfileInfo[K]) {
     onChange({ ...info, [key]: value });
@@ -106,46 +113,70 @@ export function BasicInfoForm({
       </div>
 
       <Card style={{ maxWidth: 640, margin: '0 auto', padding: 28 }}>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <form id={formId} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Avatar */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              aria-label="Choose a profile picture"
-              style={{
-                all: 'unset',
-                cursor: 'pointer',
-                width: 96,
-                height: 96,
-                borderRadius: '50%',
-                background: info.avatarDataUrl ? `url(${info.avatarDataUrl}) center/cover no-repeat` : '#eef2ed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#5b8b6f',
-                fontSize: 36,
-                fontWeight: 700,
-                border: '3px solid #fff',
-                boxShadow: '0 0 0 1px #e1e5dd, 0 4px 12px rgba(20, 30, 25, 0.08)',
-                flexShrink: 0,
-              }}
-            >
-              {!info.avatarDataUrl && (info.fullName.trim()[0]?.toUpperCase() ?? '🌿')}
-            </button>
+            {readOnly ? (
+              <div
+                aria-hidden
+                style={{
+                  width: 96,
+                  height: 96,
+                  borderRadius: '50%',
+                  background: info.avatarDataUrl ? `url(${info.avatarDataUrl}) center/cover no-repeat` : '#eef2ed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#5b8b6f',
+                  fontSize: 36,
+                  fontWeight: 700,
+                }}
+              >
+                {!info.avatarDataUrl && (info.fullName.trim()[0]?.toUpperCase() ?? '🌿')}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                aria-label="Choose a profile picture"
+                style={{
+                  all: 'unset',
+                  cursor: 'pointer',
+                  width: 96,
+                  height: 96,
+                  borderRadius: '50%',
+                  background: info.avatarDataUrl ? `url(${info.avatarDataUrl}) center/cover no-repeat` : '#eef2ed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#5b8b6f',
+                  fontSize: 36,
+                  fontWeight: 700,
+                  border: '3px solid #fff',
+                  boxShadow: '0 0 0 1px #e1e5dd, 0 4px 12px rgba(20, 30, 25, 0.08)',
+                  flexShrink: 0,
+                }}
+              >
+                {!info.avatarDataUrl && (info.fullName.trim()[0]?.toUpperCase() ?? '🌿')}
+              </button>
+            )}
             <div>
               <div style={{ fontWeight: 500, marginBottom: 4 }}>Profile picture</div>
               <div style={{ color: '#6b7280', fontSize: 13, marginBottom: 8 }}>
                 Optional. PNG or JPG, under 2 MB.
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <Button variant="secondary" size="sm" type="button" onClick={() => fileRef.current?.click()}>
-                  {info.avatarDataUrl ? 'Change' : 'Upload'}
-                </Button>
-                {info.avatarDataUrl && (
-                  <Button variant="ghost" size="sm" type="button" onClick={() => set('avatarDataUrl', '')}>
-                    Remove
-                  </Button>
+                {!readOnly && (
+                  <>
+                    <Button variant="secondary" size="sm" type="button" onClick={() => fileRef.current?.click()}>
+                      {info.avatarDataUrl ? 'Change' : 'Upload'}
+                    </Button>
+                    {info.avatarDataUrl && (
+                      <Button variant="ghost" size="sm" type="button" onClick={() => set('avatarDataUrl', '')}>
+                        Remove
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
               {errors.avatarDataUrl && <FieldError msg={errors.avatarDataUrl} />}
@@ -161,6 +192,7 @@ export function BasicInfoForm({
               placeholder="Priya Shah"
               autoComplete="name"
               style={inputStyle}
+              disabled={readOnly}
             />
           </Field>
 
@@ -178,7 +210,7 @@ export function BasicInfoForm({
             </div>
           </Field>
 
-          {!isEdit && (
+          {!isEdit && showPasswordFields !== false && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <Field label="Password" error={errors.password}>
                 <input
@@ -188,6 +220,7 @@ export function BasicInfoForm({
                   placeholder="At least 8 characters"
                   autoComplete="new-password"
                   style={inputStyle}
+                  disabled={readOnly}
                 />
               </Field>
               <Field label="Confirm password" error={errors.confirmPassword}>
@@ -197,6 +230,7 @@ export function BasicInfoForm({
                   onChange={(e) => set('confirmPassword', e.target.value)}
                   autoComplete="new-password"
                   style={inputStyle}
+                  disabled={readOnly}
                 />
               </Field>
             </div>
@@ -207,19 +241,21 @@ export function BasicInfoForm({
               <input
                 type="date"
                 value={info.birthdate}
-                onChange={(e) => set('birthdate', e.target.value)}
+                  onChange={(e) => set('birthdate', e.target.value)}
                 max={new Date().toISOString().split('T')[0]}
                 style={inputStyle}
+                  disabled={readOnly}
               />
             </Field>
             <Field label="Location" error={errors.location} hint="City, country">
               <input
                 type="text"
                 value={info.location}
-                onChange={(e) => set('location', e.target.value)}
+                  onChange={(e) => set('location', e.target.value)}
                 placeholder="Irvine, CA"
                 autoComplete="address-level2"
                 style={inputStyle}
+                  disabled={readOnly}
               />
             </Field>
           </div>
@@ -227,24 +263,26 @@ export function BasicInfoForm({
           {/* Interviewer-specific fields shown when role is interviewer */}
           {role === 'interviewer' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <Field label="Company" error={errors.company}>
-                <input
-                  type="text"
-                  value={info.company ?? ''}
-                  onChange={(e) => set('company', e.target.value)}
-                  placeholder="Acme Corp"
-                  style={inputStyle}
-                />
-              </Field>
-              <Field label="Your role" error={errors.companyRole}>
-                <input
-                  type="text"
-                  value={info.companyRole ?? ''}
-                  onChange={(e) => set('companyRole', e.target.value)}
-                  placeholder="Talent Partner"
-                  style={inputStyle}
-                />
-              </Field>
+                <Field label="Company" error={errors.company}>
+                  <input
+                    type="text"
+                    value={info.company ?? ''}
+                    onChange={(e) => set('company', e.target.value)}
+                    placeholder="Acme Corp"
+                    style={inputStyle}
+                    disabled={readOnly}
+                  />
+                </Field>
+                <Field label="Your role" error={errors.companyRole}>
+                  <input
+                    type="text"
+                    value={info.companyRole ?? ''}
+                    onChange={(e) => set('companyRole', e.target.value)}
+                    placeholder="Talent Partner"
+                    style={inputStyle}
+                    disabled={readOnly}
+                  />
+                </Field>
             </div>
           )}
 
@@ -254,12 +292,14 @@ export function BasicInfoForm({
             </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginTop: 8 }}>
-            {justSaved && <span style={{ color: '#5b8b6f', fontSize: 14 }}>✓ Saved</span>}
-            <Button variant="primary" size="lg" type="submit">
-              {buttonLabel}
-            </Button>
-          </div>
+          {!readOnly && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginTop: 8 }}>
+              {justSaved && <span style={{ color: '#5b8b6f', fontSize: 14 }}>✓ Saved</span>}
+              <Button variant="primary" size="lg" type="submit">
+                {buttonLabel}
+              </Button>
+            </div>
+          )}
         </form>
       </Card>
     </section>
