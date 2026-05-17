@@ -59,7 +59,7 @@ Google Meet · Zoom (web) · Microsoft Teams
 
 ## A note on the name
 
-Capybaras are chill. We love capybaras.
+Capybaras are chill. We love capybaras. We want to bring that chill energy to our interviews. Stay chill guys. 
 
 ---
 
