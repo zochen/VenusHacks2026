@@ -343,11 +343,136 @@ function CapyMascot() {
 // ---- Eye / privacy blur button (mirrors the extension's floating button) ----
 function EyeBlurButton() {
   const [active, setActive] = React.useState(false);
+  const drawOverlayRef = React.useRef<HTMLDivElement | null>(null);
+  const previewRef = React.useRef<HTMLDivElement | null>(null);
+  const drawModeRef = React.useRef(false);
+  const startRef = React.useRef({ x: 0, y: 0 });
+
+  React.useEffect(() => {
+    const existing = document.getElementById('quietspace-demo-blur');
+    if (existing) existing.remove();
+
+    const drawOverlay = document.createElement('div');
+    drawOverlay.id = 'quietspace-demo-blur';
+    drawOverlay.style.cssText =
+      'position:fixed;inset:0;cursor:crosshair;z-index:2147483646;display:none;background:rgba(52,116,141,0.06);';
+    const hint = document.createElement('div');
+    hint.textContent = 'Drag to blur an area · Esc to cancel';
+    hint.style.cssText =
+      "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#34748D;color:#fff;padding:8px 16px;border-radius:999px;font:600 13px 'Outfit',system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.25);pointer-events:none;";
+    drawOverlay.appendChild(hint);
+    document.body.appendChild(drawOverlay);
+    drawOverlayRef.current = drawOverlay;
+
+    function createBlurBox(rect: DOMRect) {
+      const blurBox = document.createElement('div');
+      blurBox.className = 'quietspace-demo-blur-rect';
+      blurBox.style.cssText =
+        `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(255,255,255,0.04);z-index:2147483640;border-radius:8px;box-shadow:0 0 0 1px rgba(52,116,141,0.3);pointer-events:none;`;
+
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'quietspace-demo-blur-rect__close';
+      close.setAttribute('aria-label', 'Remove blur');
+      close.title = 'Remove blur';
+      close.textContent = '×';
+      close.style.cssText =
+        'position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:#34748D;color:#fff;border:none;cursor:pointer;font-size:16px;line-height:1;pointer-events:auto;display:flex;align-items:center;justify-content:center;';
+      close.addEventListener('click', () => blurBox.remove());
+      blurBox.appendChild(close);
+
+      return blurBox;
+    }
+
+    function enterDrawMode() {
+      drawModeRef.current = true;
+      drawOverlay.style.display = 'block';
+    }
+
+    function exitDrawMode() {
+      drawModeRef.current = false;
+      drawOverlay.style.display = 'none';
+      if (previewRef.current) {
+        previewRef.current.remove();
+        previewRef.current = null;
+      }
+    }
+
+    function onMouseDown(e: MouseEvent) {
+      if (!drawModeRef.current) return;
+      startRef.current.x = e.clientX;
+      startRef.current.y = e.clientY;
+      const preview = document.createElement('div');
+      preview.style.cssText =
+        `position:fixed;left:${startRef.current.x}px;top:${startRef.current.y}px;width:0;height:0;border:2px dashed #34748D;background:rgba(175,240,255,0.18);z-index:2147483646;pointer-events:none;border-radius:6px;`;
+      previewRef.current = preview;
+      document.body.appendChild(preview);
+    }
+
+    function onMouseMove(e: MouseEvent) {
+      if (!previewRef.current) return;
+      const x = Math.min(startRef.current.x, e.clientX);
+      const y = Math.min(startRef.current.y, e.clientY);
+      const width = Math.abs(e.clientX - startRef.current.x);
+      const height = Math.abs(e.clientY - startRef.current.y);
+      previewRef.current.style.left = `${x}px`;
+      previewRef.current.style.top = `${y}px`;
+      previewRef.current.style.width = `${width}px`;
+      previewRef.current.style.height = `${height}px`;
+    }
+
+    function onMouseUp() {
+      if (!previewRef.current) return;
+      const rect = previewRef.current.getBoundingClientRect();
+      previewRef.current.remove();
+      previewRef.current = null;
+      if (rect.width < 12 || rect.height < 12) {
+        exitDrawMode();
+        return;
+      }
+
+      const blurBox = createBlurBox(rect);
+      document.body.appendChild(blurBox);
+      exitDrawMode();
+    }
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && drawModeRef.current) {
+        exitDrawMode();
+      }
+    }
+
+    drawOverlay.addEventListener('mousedown', onMouseDown);
+    drawOverlay.addEventListener('mousemove', onMouseMove);
+    drawOverlay.addEventListener('mouseup', onMouseUp);
+    document.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      drawOverlay.remove();
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, []);
+
+  const toggleDrawMode = () => {
+    const overlay = drawOverlayRef.current;
+    if (!overlay) return;
+    setActive((current) => {
+      const next = !current;
+      drawModeRef.current = next;
+      overlay.style.display = next ? 'block' : 'none';
+      if (!next && previewRef.current) {
+        previewRef.current.remove();
+        previewRef.current = null;
+      }
+      return next;
+    });
+  };
+
   return (
     <button
       type="button"
       className={`qs-eye-btn${active ? ' active' : ''}`}
-      onClick={() => setActive((v) => !v)}
+      onClick={toggleDrawMode}
       title={active ? 'Click to stop blurring' : 'Drag on the page to blur an area'}
       aria-label="Privacy blur"
     >
