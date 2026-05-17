@@ -78,7 +78,7 @@ const severityColor: Record<BiasSeverity, { bg: string; border: string; label: s
 
 const styleColor: Record<string, { bg: string; fg: string }> = {
   default: { bg: '#eef2ed', fg: '#2a2d33' },
-  relaxed: { bg: '#e3efe7', fg: '#5b8b6f' },
+  relaxed: { bg: '#e3efe7', fg: '#0d9488' },
   focus: { bg: '#fef3e7', fg: '#8a5a18' },
 };
 
@@ -210,6 +210,29 @@ export default function InterviewerDashboardPage() {
         loadLocalInterviews();
         return;
       }
+
+      const interviewIds = (data ?? []).map((iv: any) => iv.id);
+      const questionsByInterview: Record<string, string> = {};
+      if (interviewIds.length > 0) {
+        const { data: qData, error: qError } = await supabase
+          .from('questions')
+          .select('interview_id, prompt, order_number')
+          .in('interview_id', interviewIds)
+          .order('order_number', { ascending: true });
+        if (qError) {
+          console.warn('Failed to load interview questions from Supabase', qError);
+        } else {
+          const grouped: Record<string, string[]> = {};
+          (qData ?? []).forEach((q: any) => {
+            if (!grouped[q.interview_id]) grouped[q.interview_id] = [];
+            grouped[q.interview_id]!.push(String(q.prompt ?? ''));
+          });
+          for (const [id, prompts] of Object.entries(grouped)) {
+            questionsByInterview[id] = prompts.filter(Boolean).join('\n');
+          }
+        }
+      }
+
       setStored((data ?? []).map((iv: any) => ({
         id: iv.id,
         candidate: iv.candidate_name ?? iv.candidate_email ?? iv.id,
@@ -217,7 +240,7 @@ export default function InterviewerDashboardPage() {
         when: iv.scheduled_at ? formatInterviewTime(iv.scheduled_at) : 'TBD',
         style: 'default',
         status: iv.status ?? 'scheduled',
-        questionsText: null,
+        questionsText: questionsByInterview[iv.id] ?? null,
         attachedFileDataUrl: null,
         attachedFileName: null,
         inviteStatus: 'pending',
@@ -230,12 +253,34 @@ export default function InterviewerDashboardPage() {
   const [selected, setSelected] = React.useState<null | any>(null);
   const [inviteStates, setInviteStates] = React.useState<Record<string, InviteStatus>>({});
   const [editingQuestions, setEditingQuestions] = React.useState<string[] | null>(null);
-  const [evaluation, setEvaluation] = React.useState<{ text: string; finding: BiasFinding }[] | null>(null);
+  const [evaluation, setEvaluation] = React.useState<{ text: string; finding: BiasFinding; originalText?: string; originalFinding?: BiasFinding }[] | null>(null);
   const [expandedEval, setExpandedEval] = React.useState<number | null>(null);
   const [evalDirty, setEvalDirty] = React.useState(false);
   const [flashing, setFlashing] = React.useState(false);
   const [evalLoading, setEvalLoading] = React.useState(false);
   const [evalError, setEvalError] = React.useState<string | null>(null);
+
+  async function persistQuestionsToSupabase(interviewId: string, newText: string | null) {
+    const supabase = getSupabase();
+    if (!user || !supabase) return;
+    const { error: delErr } = await supabase
+      .from('questions')
+      .delete()
+      .eq('interview_id', interviewId);
+    if (delErr) {
+      console.warn('Failed to delete existing questions before update', delErr);
+      return;
+    }
+    if (!newText) return;
+    const rows = newText
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((prompt, i) => ({ interview_id: interviewId, prompt, order_number: i + 1 }));
+    if (rows.length === 0) return;
+    const { error: insErr } = await supabase.from('questions').insert(rows);
+    if (insErr) console.warn('Failed to insert updated questions', insErr);
+  }
 
   async function fetchFindings(questions: string[]): Promise<BiasFinding[]> {
     const res = await fetch('/api/ai/evaluate-question', {
@@ -280,19 +325,37 @@ export default function InterviewerDashboardPage() {
   }
 
   function clearEvaluation() {
-    if (evalDirty) { triggerFlash(); return; }
     setEvaluation(null);
     setExpandedEval(null);
     setEvalError(null);
+    setEvalDirty(false);
   }
 
   function applyVariation(idx: number, suggestion: string) {
     if (!evaluation) return;
     const next = [...evaluation];
+    const current = next[idx]!;
     // Suggestions are LLM-generated non-biased rewrites; mark as clean optimistically.
-    next[idx] = { text: suggestion, finding: { severity: 'none', issues: [], explanations: [], suggestions: [] } };
+    // Preserve the original text + finding so we can show a pending-replacement badge and allow undo.
+    next[idx] = {
+      text: suggestion,
+      finding: { severity: 'none', issues: [], explanations: [], suggestions: [] },
+      originalText: current.originalText ?? current.text,
+      originalFinding: current.originalFinding ?? current.finding,
+    };
     setEvaluation(next);
+    setExpandedEval(null);
     setEvalDirty(true);
+  }
+
+  function undoVariation(idx: number) {
+    if (!evaluation) return;
+    const next = [...evaluation];
+    const current = next[idx]!;
+    if (current.originalText === undefined || current.originalFinding === undefined) return;
+    next[idx] = { text: current.originalText, finding: current.originalFinding };
+    setEvaluation(next);
+    setEvalDirty(next.some((item) => item.originalText !== undefined));
   }
 
   function saveEvaluation() {
@@ -311,6 +374,7 @@ export default function InterviewerDashboardPage() {
         }
       }
     } catch {}
+    void persistQuestionsToSupabase(selected.id, newText);
     setEvalDirty(false);
   }
 
@@ -320,7 +384,6 @@ export default function InterviewerDashboardPage() {
   }
 
   function attemptClose() {
-    if (evalDirty) { triggerFlash(); return; }
     setSelected(null);
     setEditingQuestions(null);
     setEvaluation(null);
@@ -363,6 +426,7 @@ export default function InterviewerDashboardPage() {
       }
     } catch {}
 
+    void persistQuestionsToSupabase(selected.id, newText);
     setEditingQuestions(null);
   }
 
@@ -419,7 +483,7 @@ export default function InterviewerDashboardPage() {
           href="/interviewer/new-interview"
           style={{
             padding: '12px 20px',
-            background: '#5b8b6f',
+            background: '#0d9488',
             color: '#fff',
             borderRadius: 12,
             fontWeight: 600,
@@ -466,7 +530,7 @@ export default function InterviewerDashboardPage() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontWeight: 600,
-                      color: '#5b8b6f',
+                      color: '#0d9488',
                     }}
                   >
                     {candidateInitials || '—'}
@@ -495,7 +559,7 @@ export default function InterviewerDashboardPage() {
                       padding: '4px 12px',
                       borderRadius: 999,
                       background: iv.status === 'completed' ? '#f3f3f3' : '#e3efe7',
-                      color: iv.status === 'completed' ? '#6b7280' : '#5b8b6f',
+                      color: iv.status === 'completed' ? '#6b7280' : '#0d9488',
                       fontSize: 12,
                       fontWeight: 600,
                       textTransform: 'capitalize',
@@ -614,7 +678,7 @@ export default function InterviewerDashboardPage() {
                         <button
                           type="button"
                           onClick={saveEditing}
-                          style={{ all: 'unset', cursor: 'pointer', padding: '6px 12px', borderRadius: 8, background: '#5b8b6f', color: '#fff', fontSize: 14, fontWeight: 600 }}
+                          style={{ all: 'unset', cursor: 'pointer', padding: '6px 12px', borderRadius: 8, background: '#0d9488', color: '#fff', fontSize: 14, fontWeight: 600 }}
                         >
                           Save
                         </button>
@@ -666,8 +730,21 @@ export default function InterviewerDashboardPage() {
                       </div>
                     </div>
                   ) : evalLoading ? (
-                    <div style={{ padding: 16, border: '1px solid #e1e5dd', borderRadius: 10, background: '#fafbf8', color: '#6b7280', fontSize: 14 }}>
-                      Evaluating questions with Gemini…
+                    <div style={{ padding: 16, border: '1px solid #e1e5dd', borderRadius: 10, background: '#fafbf8' }}>
+                      <div style={{ color: '#6b7280', fontSize: 13, marginBottom: 10 }}>Evaluating questions…</div>
+                      <div style={{ position: 'relative', height: 6, background: '#e6eef6', borderRadius: 999, overflow: 'hidden' }}>
+                        <div
+                          className="capy-progress"
+                          style={{ position: 'absolute', top: 0, bottom: 0, width: '40%', background: 'linear-gradient(90deg, #0d9488, #8ab69a)', borderRadius: 999 }}
+                        />
+                      </div>
+                      <style>{`
+                        @keyframes capyProgressSlide {
+                          0%   { left: -40%; }
+                          100% { left: 100%; }
+                        }
+                        .capy-progress { animation: capyProgressSlide 1.2s ease-in-out infinite; }
+                      `}</style>
                     </div>
                   ) : evalError ? (
                     <div style={{ padding: 16, border: '1px solid #f4a8a4', borderRadius: 10, background: '#fde2e1', color: '#8a1f1a', fontSize: 14 }}>
@@ -689,34 +766,60 @@ export default function InterviewerDashboardPage() {
                       {evaluation.map((item, idx) => {
                         const c = severityColor[item.finding.severity];
                         const isOpen = expandedEval === idx;
-                        const sevLabel = item.finding.severity === 'none' ? 'no issues detected' : `${item.finding.severity} severity`;
+                        const isPending = item.originalText !== undefined;
+                        const sevLabel = isPending
+                          ? 'pending replacement · save to apply'
+                          : item.finding.severity === 'none' ? 'no issues detected' : `${item.finding.severity} severity`;
                         return (
                           <div
                             key={idx}
                             style={{
-                              background: c.bg,
-                              border: `1px solid ${c.border}`,
+                              background: isPending ? '#eef2ff' : c.bg,
+                              border: `1px solid ${isPending ? '#a5b4fc' : c.border}`,
                               borderRadius: 10,
                               overflow: 'hidden',
                             }}
                           >
-                            <button
-                              type="button"
-                              onClick={() => setExpandedEval(isOpen ? null : idx)}
-                              aria-expanded={isOpen}
-                              style={{ all: 'unset', cursor: 'pointer', display: 'block', width: '100%', padding: '10px 14px' }}
+                            <div
+                              role={isPending ? undefined : 'button'}
+                              tabIndex={isPending ? undefined : 0}
+                              onClick={() => !isPending && setExpandedEval(isOpen ? null : idx)}
+                              onKeyDown={(e) => {
+                                if (isPending) return;
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setExpandedEval(isOpen ? null : idx);
+                                }
+                              }}
+                              aria-expanded={isPending ? undefined : isOpen}
+                              style={{ cursor: isPending ? 'default' : 'pointer', display: 'block', width: '100%', padding: '10px 14px' }}
                             >
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                                 <div style={{ flex: 1 }}>
-                                  <div style={{ fontSize: 12, fontWeight: 700, color: c.label, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>
+                                  <div style={{ fontSize: 12, fontWeight: 700, color: isPending ? '#3730a3' : c.label, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>
                                     {sevLabel}
-                                    {item.finding.issues.length > 0 && <span style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0, marginLeft: 8, color: c.label }}>· {item.finding.issues.join(', ')}</span>}
+                                    {!isPending && item.finding.issues.length > 0 && <span style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0, marginLeft: 8, color: c.label }}>· {item.finding.issues.join(', ')}</span>}
                                   </div>
                                   <div style={{ fontSize: 15, color: '#1f2937' }}>{item.text}</div>
+                                  {isPending && (
+                                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed #a5b4fc', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                                      <div style={{ flex: 1 }}>
+                                        <div style={{ fontSize: 11, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 2 }}>Replacing</div>
+                                        <div style={{ fontSize: 13, color: '#6b7280', textDecoration: 'line-through' }}>{item.originalText}</div>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); undoVariation(idx); }}
+                                        style={{ all: 'unset', cursor: 'pointer', padding: '4px 10px', borderRadius: 6, background: '#fff', border: '1px solid #a5b4fc', color: '#3730a3', fontSize: 12, fontWeight: 600 }}
+                                      >
+                                        Undo
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
-                                <div style={{ fontSize: 18, color: c.label, lineHeight: 1 }}>{isOpen ? '▾' : '▸'}</div>
+                                {!isPending && <div style={{ fontSize: 18, color: c.label, lineHeight: 1 }}>{isOpen ? '▾' : '▸'}</div>}
                               </div>
-                            </button>
+                            </div>
                             {isOpen && (
                               <div style={{ padding: '0 14px 12px 14px', borderTop: `1px solid ${c.border}` }}>
                                 {item.finding.explanations.length > 0 && (
@@ -784,7 +887,7 @@ export default function InterviewerDashboardPage() {
                             cursor: evalDirty ? 'pointer' : 'not-allowed',
                             padding: '10px 18px',
                             borderRadius: 10,
-                            background: evalDirty ? '#5b8b6f' : '#cbd5d0',
+                            background: evalDirty ? '#0d9488' : '#cbd5d0',
                             color: '#fff',
                             fontSize: 14,
                             fontWeight: 700,

@@ -225,7 +225,7 @@ export default function NewInterviewPage() {
             <Button variant="primary" type="submit" disabled={submitted}>
               {submitted ? 'Creating...' : 'Create interview'}
             </Button>
-            {submitted && <span style={{ color: '#5b8b6f', fontSize: 14 }}>✓ Sent — redirecting</span>}
+            {submitted && <span style={{ color: '#0d9488', fontSize: 14 }}>✓ Sent — redirecting</span>}
           </div>
           {error && (
             <div style={{ color: '#991b1b', background: '#fee2e2', borderRadius: 10, padding: 12, fontSize: 14 }}>

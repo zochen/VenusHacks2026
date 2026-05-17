@@ -7,6 +7,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { AuthProvider } from '../lib/AuthContext';
 import { HeaderNav } from './HeaderNav';
+import { PageFade } from './PageFade';
 
 export const metadata: Metadata = {
   title: 'CapyConnect — Accessible technical interviews',
@@ -52,7 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           @media (max-width: 520px) { .site-logo-left, .site-logo-right { height: 40px; } }
           @media (max-width: 420px) { header { padding: 12px 16px; } }
         `}</style>
-          {children}
+          <PageFade>{children}</PageFade>
         </AuthProvider>
       </body>
     </html>

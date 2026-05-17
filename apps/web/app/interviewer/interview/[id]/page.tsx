@@ -126,7 +126,7 @@ export default function InterviewerInterviewPage({ params }: { params: { id: str
             padding: '6px 14px',
             borderRadius: 999,
             background: '#e3efe7',
-            color: '#5b8b6f',
+            color: '#0d9488',
             fontSize: 13,
             fontWeight: 600,
           }}
