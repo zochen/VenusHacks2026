@@ -68,7 +68,7 @@ export default function MarketingPage() {
       {/* Large brand logo with soft blue oval gradient */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24, position: 'relative' }}>
         <div style={{ position: 'absolute', width: '68%', height: 220, borderRadius: 200, background: 'radial-gradient(ellipse at center, rgba(74,144,226,0.14), rgba(74,144,226,0.04))', zIndex: 0, top: 18 }} />
-        <img src="/CapyConnect_logo.PNG" alt="CapyConnect" style={{ width: 520, height: 520, objectFit: 'contain', borderRadius: 24, zIndex: 2 }} />
+        <img src="/CapyConnect_logo.png" alt="CapyConnect" style={{ width: 520, height: 520, objectFit: 'contain', borderRadius: 24, zIndex: 2 }} />
       </div>
       {/* Hero Section */}
       <section style={{ display: 'grid', gridTemplateColumns: '1fr 480px', gap: 32, alignItems: 'center', marginBottom: 64 }}>
