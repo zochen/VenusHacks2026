@@ -90,18 +90,6 @@ export function Popup() {
   async function toggleMascot(next: boolean) {
     setShowMascot(next);
     chrome.storage?.local?.set({ capyShowMascot: next });
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab?.id) return;
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: (show: boolean) => {
-          const m = document.getElementById('quietspace-demo-mascot');
-          if (m) (m as HTMLElement).style.display = show ? 'flex' : 'none';
-        },
-        args: [next],
-      });
-    } catch {}
   }
 
   function sendTopic(text: string) {
@@ -149,52 +137,7 @@ export function Popup() {
   }
 
   async function startCaptionDemo() {
-    setDemoStatus('Injecting overlay…');
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab?.id) {
-        setDemoStatus('No active tab.');
-        return;
-      }
-      if (tab.url && /^(chrome|edge|about|chrome-extension):/i.test(tab.url)) {
-        setDemoStatus('Cannot inject on browser pages. Open any normal site.');
-        return;
-      }
-      // Fetch the mascot from the extension package and inline as a data URI
-      // so the injected script can render it regardless of the host page's CSP.
-      let mascotUrl = '';
-      try {
-        const res = await fetch(chrome.runtime.getURL('CapyConnect_avatar.png'));
-        const blob = await res.blob();
-        mascotUrl = await new Promise<string>((resolve, reject) => {
-          const r = new FileReader();
-          r.onload = () => resolve(String(r.result));
-          r.onerror = () => reject(r.error);
-          r.readAsDataURL(blob);
-        });
-      } catch {
-        // leave empty; injected script will show fallback
-      }
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: injectCaptionDemo,
-        args: [{
-          room: roomCode || null,
-          relayUrl: relayUrl || null,
-          role: role ?? 'candidate',
-          presets: PRESET_QUESTIONS.map((q) => ({ text: q.text })),
-          mascotUrl,
-          showMascot,
-        }],
-      });
-      setDemoStatus(
-        roomCode
-          ? `Overlay added — room ${roomCode}. Grant mic permission.`
-          : 'Overlay added — set a room code to sync with another machine.',
-      );
-    } catch (e: any) {
-      setDemoStatus(`Failed: ${e?.message ?? e}`);
-    }
+    setDemoStatus('Overlay injection is disabled.');
   }
 
   return (
@@ -264,7 +207,7 @@ export function Popup() {
           />
           <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontWeight: 600, color: hostSupported ? '#2b6ea3' : '#8a5a18' }}>
-              {hostSupported ? 'Overlay active on this tab' : 'Not on a supported call'}
+              {hostSupported ? 'Supported site' : 'Not on a supported call'}
             </div>
             <div style={{ fontSize: 11, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {activeHost ?? 'Open a tab to check'}
