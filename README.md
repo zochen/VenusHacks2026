@@ -59,7 +59,7 @@ Google Meet · Zoom (web) · Microsoft Teams
 
 ## A note on the name
 
-Capybaras are calm. They share hot springs with orange-bearing wildlife and don't judge anyone for how long it takes to answer a question. We thought that was a good vibe for an interview tool.
+Capybaras are chill. We love capybaras.
 
 ---
 
