@@ -375,9 +375,9 @@ function EyeBlurButton() {
       close.className = 'quietspace-demo-blur-rect__close';
       close.setAttribute('aria-label', 'Remove blur');
       close.title = 'Remove blur';
-      close.textContent = '×';
+      close.textContent = 'X';
       close.style.cssText =
-        'position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:#34748D;color:#fff;border:none;cursor:pointer;font-size:16px;line-height:1;pointer-events:auto;display:flex;align-items:center;justify-content:center;';
+        'position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:#34748D;color:#fff;border:none;cursor:pointer;font-size:16px;line-height:1;pointer-events:auto;display:flex;align-items:center;justify-content:center;transform:translateY(-3px);';
       close.addEventListener('click', () => blurBox.remove());
       blurBox.appendChild(close);
 
