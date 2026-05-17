@@ -201,7 +201,7 @@ export function BasicInfoForm({
               type="text"
               value={info.fullName}
               onChange={(e) => set('fullName', e.target.value)}
-              placeholder="Priya Shah"
+              placeholder="Your full name"
               autoComplete="name"
               style={inputStyle}
               disabled={readOnly}
@@ -215,7 +215,7 @@ export function BasicInfoForm({
                 type="text"
                 value={info.username}
                 onChange={(e) => set('username', e.target.value.replace(/\s/g, ''))}
-                placeholder="priya"
+                placeholder="username"
                 autoComplete="username"
                 style={{ ...inputStyle, border: 'none', background: 'transparent', padding: '10px 12px 10px 4px' }}
               />
@@ -295,12 +295,6 @@ export function BasicInfoForm({
                     disabled={readOnly}
                   />
                 </Field>
-            </div>
-          )}
-
-          {isEdit && (
-            <div style={{ paddingTop: 8, borderTop: '1px dashed #e1e5dd', fontSize: 12, color: '#6b7280' }}>
-              Password changes will move to a dedicated flow once Supabase auth is wired up.
             </div>
           )}
 

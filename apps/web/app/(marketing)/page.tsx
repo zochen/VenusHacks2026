@@ -50,25 +50,6 @@ export default function MarketingPage() {
     return () => document.body.classList.remove('home');
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const els = Array.from(document.querySelectorAll('.pair')) as HTMLElement[];
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          const el = e.target as HTMLElement;
-          if (e.isIntersecting) {
-            el.classList.add('in-view');
-            // keep observing so fade can re-run if user scrolls back
-            // but we don't need to unobserve immediately
-          }
-        });
-      },
-      { threshold: 0.08 }
-    );
-    els.forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
-  }, []);
   return (
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: '56px 32px' }}>
       {/* Large brand logo with soft blue oval gradient */}
@@ -394,10 +375,6 @@ export default function MarketingPage() {
         {/* pair/panel layout + fade-in styles */}
         <style dangerouslySetInnerHTML={{ __html: `
           main { scroll-snap-type: none; }
-          .pair { opacity: 0.02; transition: opacity 700ms ease; }
-          .pair.in-view { opacity: 1; }
-          .panel { opacity: 0; transition: opacity 700ms ease; }
-          .pair.in-view .panel { opacity: 1; }
           .panel > div { max-width: 960px; }
           .panel h3 { font-size: 36px; margin: 0 0 12px; }
           .panel p { font-size: 18px; color: #234154; line-height: 1.6; }

@@ -643,8 +643,12 @@ export default function InterviewerDashboardPage() {
           );
         })}
 
-        {/* Overlay modal for selected interview */}
-        {selected && (
+      </div>
+    </main>
+    {/* Overlay modal for selected interview — rendered as a sibling of <main>
+        so it escapes main's stacking context (position:relative + zIndex:1)
+        and can layer above the global <header> (zIndex:10). */}
+    {selected && (
           <div
             role="dialog"
             aria-modal
@@ -969,9 +973,7 @@ export default function InterviewerDashboardPage() {
               </Card>
             </div>
           </div>
-        )}
-      </div>
-    </main>
+    )}
     </>
   );
 }
