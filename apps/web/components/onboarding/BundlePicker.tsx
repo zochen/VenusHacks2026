@@ -79,7 +79,7 @@ export function BundlePicker({
   return (
   <section style={{ animation: 'capyconnect-panel-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
-        <h1 style={{ fontSize: 32, margin: '0 0 10px' }}>{title}</h1>
+        <h1 className="capy-title" style={{ fontSize: 32, margin: '0 0 10px' }}>{title}</h1>
         <p style={{ color: '#6b7280', fontSize: 16, margin: 0 }}>{subtitle}</p>
       </div>
 

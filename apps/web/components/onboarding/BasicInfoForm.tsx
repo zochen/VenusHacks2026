@@ -13,6 +13,7 @@ export interface BasicInfoFormProps {
   onChange: (next: ProfileInfo) => void;
   onSubmit: () => void;
   mode?: 'create' | 'edit';
+  role?: 'candidate' | 'interviewer' | null;
   title?: string;
   subtitle?: string;
   submitLabel?: string;
@@ -39,6 +40,7 @@ export function BasicInfoForm({
   subtitle,
   submitLabel,
   savedAt,
+  role = null,
 }: BasicInfoFormProps) {
   const fileRef = React.useRef<HTMLInputElement>(null);
   const [errors, setErrors] = React.useState<Partial<Record<keyof ProfileInfo, string>>>({});
@@ -81,6 +83,10 @@ export function BasicInfoForm({
     if (!info.birthdate) next.birthdate = 'Required.';
     else if (new Date(info.birthdate) > new Date()) next.birthdate = 'Birthdate must be in the past.';
     if (info.location.trim().length < 2) next.location = 'Required.';
+    if (role === 'interviewer') {
+      if (!info.company || info.company.trim().length < 2) next.company = 'Required.';
+      if (!info.companyRole || info.companyRole.trim().length < 2) next.companyRole = 'Required.';
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -95,7 +101,7 @@ export function BasicInfoForm({
   return (
   <section style={{ animation: 'capyconnect-panel-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <h1 style={{ fontSize: 32, margin: '0 0 10px' }}>{headerTitle}</h1>
+        <h1 className="capy-title" style={{ fontSize: 32, margin: '0 0 10px' }}>{headerTitle}</h1>
         <p style={{ color: '#6b7280', fontSize: 16, margin: 0 }}>{headerSubtitle}</p>
       </div>
 
@@ -217,6 +223,30 @@ export function BasicInfoForm({
               />
             </Field>
           </div>
+
+          {/* Interviewer-specific fields shown when role is interviewer */}
+          {role === 'interviewer' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <Field label="Company" error={errors.company}>
+                <input
+                  type="text"
+                  value={info.company ?? ''}
+                  onChange={(e) => set('company', e.target.value)}
+                  placeholder="Acme Corp"
+                  style={inputStyle}
+                />
+              </Field>
+              <Field label="Your role" error={errors.companyRole}>
+                <input
+                  type="text"
+                  value={info.companyRole ?? ''}
+                  onChange={(e) => set('companyRole', e.target.value)}
+                  placeholder="Talent Partner"
+                  style={inputStyle}
+                />
+              </Field>
+            </div>
+          )}
 
           {isEdit && (
             <div style={{ paddingTop: 8, borderTop: '1px dashed #e1e5dd', fontSize: 12, color: '#6b7280' }}>

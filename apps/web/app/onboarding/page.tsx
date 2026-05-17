@@ -11,11 +11,13 @@ import { BasicInfoForm } from '../../components/onboarding/BasicInfoForm';
 import { BundlePicker } from '../../components/onboarding/BundlePicker';
 import { EMPTY_INFO, derivePreferencesFromFeatures, type ProfileInfo } from '../../components/onboarding/data';
 
-type Step = 'info' | 'style';
+type Step = 'role' | 'info' | 'style';
+type Role = 'candidate' | 'interviewer' | null;
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [step, setStep] = React.useState<Step>('info');
+  const [step, setStep] = React.useState<Step>('role');
+  const [role, setRole] = React.useState<Role>(null);
   const [info, setInfo] = React.useState<ProfileInfo>(EMPTY_INFO);
 
   function handleInfoSubmit() {
@@ -25,7 +27,14 @@ export default function OnboardingPage() {
       birthdate: info.birthdate,
       location: info.location.trim(),
       avatarDataUrl: info.avatarDataUrl,
+      // optional interviewer fields
+      company: (info as any).company ?? undefined,
+      companyRole: (info as any).companyRole ?? undefined,
     };
+    try {
+      // persist role along with basic profile info
+      localStorage.setItem('capyconnect.role', role ?? 'candidate');
+    } catch {}
     try {
       localStorage.setItem('capyconnect.profile', JSON.stringify(profile));
     } catch {}
@@ -48,8 +57,17 @@ export default function OnboardingPage() {
     <main style={{ maxWidth: 1080, margin: '0 auto', padding: '40px 32px' }}>
       <StepIndicator step={step} onJumpToInfo={() => setStep('info')} />
 
+      {step === 'role' && (
+        <RolePicker
+          onChoose={(r) => {
+            setRole(r);
+            setStep('info');
+          }}
+        />
+      )}
+
       {step === 'info' && (
-        <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleInfoSubmit} mode="create" />
+        <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleInfoSubmit} mode="create" role={role} />
       )}
 
       {step === 'style' && <BundlePicker onSave={handleStyleSave} />}
@@ -113,6 +131,39 @@ function StepIndicator({ step, onJumpToInfo }: { step: Step; onJumpToInfo: () =>
           </React.Fragment>
         );
       })}
+    </div>
+  );
+}
+
+function RolePicker({ onChoose }: { onChoose: (r: Role) => void }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, paddingTop: 40 }}>
+      <h2 className="capy-title" style={{ fontSize: 28, margin: 0 }}>Who are you?</h2>
+      <p style={{ color: '#6b7280' }}>Pick whether you are signing up as a Candidate or an Interviewer.</p>
+      <div style={{ display: 'flex', gap: 20, marginTop: 12 }}>
+        <button
+          type="button"
+          onClick={() => onChoose('candidate')}
+          style={{ all: 'unset', cursor: 'pointer' }}
+        >
+          <div style={{ padding: '18px 28px', borderRadius: 14, border: '1px solid #e1e5dd', background: '#fff' }}>
+            <div style={{ fontSize: 24 }}>👤</div>
+            <div style={{ marginTop: 8, fontWeight: 600 }}>Candidate</div>
+            <div style={{ color: '#6b7280', fontSize: 13 }}>Apply and practice for interviews</div>
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={() => onChoose('interviewer')}
+          style={{ all: 'unset', cursor: 'pointer' }}
+        >
+          <div style={{ padding: '18px 28px', borderRadius: 14, border: '1px solid #e1e5dd', background: '#fff' }}>
+            <div style={{ fontSize: 24 }}>💼</div>
+            <div style={{ marginTop: 8, fontWeight: 600 }}>Interviewer</div>
+            <div style={{ color: '#6b7280', fontSize: 13 }}>Run interviews and provide accommodations</div>
+          </div>
+        </button>
+      </div>
     </div>
   );
 }

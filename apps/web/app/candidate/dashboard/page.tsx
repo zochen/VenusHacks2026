@@ -152,7 +152,7 @@ export default function CandidateDashboardPage() {
           {!profile?.avatarDataUrl && firstName[0]?.toUpperCase()}
         </div>
         <div style={{ flex: 1 }}>
-          <h1 style={{ margin: '0 0 4px', fontSize: 28 }}>Welcome, {displayName}</h1>
+          <h1 className="capy-title" style={{ margin: '0 0 4px', fontSize: 28 }}>Welcome, {displayName}</h1>
           <p style={{ margin: 0, color: '#6b7280', fontSize: 14 }}>
             {greeting(now)} · {sorted.length} upcoming interview{sorted.length === 1 ? '' : 's'}
           </p>

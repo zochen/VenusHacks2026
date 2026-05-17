@@ -21,6 +21,9 @@ export type ProfileInfo = {
   birthdate: string;
   location: string;
   avatarDataUrl: string;
+  // Optional fields for interviewers
+  company?: string;
+  companyRole?: string;
 };
 
 export const EMPTY_INFO: ProfileInfo = {
@@ -31,6 +34,8 @@ export const EMPTY_INFO: ProfileInfo = {
   birthdate: '',
   location: '',
   avatarDataUrl: '',
+  company: '',
+  companyRole: '',
 };
 
 export const ALL_FEATURES: Feature[] = [

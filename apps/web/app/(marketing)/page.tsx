@@ -142,7 +142,7 @@ export default function MarketingPage() {
 
       {/* Why CapyConnect? — alternating flowing sections */}
       <section style={{ marginBottom: 48 }}>
-        <h2 style={{ fontSize: 28, margin: '0 0 18px' }}>Why CapyConnect?</h2>
+        <h2 className="capy-title" style={{ fontSize: 28, margin: '0 0 18px' }}>Why CapyConnect?</h2>
 
         {/** Build a combined array so we can render six alternating sections */}
         {(() => {
@@ -158,7 +158,7 @@ export default function MarketingPage() {
                 {[p.top, p.bottom].map((s, idx) => (
                   <div key={s.title} className="panel" style={{ flex: '1 1 50vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 28px', boxSizing: 'border-box' }}>
                     <div style={{ maxWidth: 900, textAlign: idx === 0 ? 'left' : 'right' }}>
-                      <h3 style={{ margin: '0 0 12px', fontSize: 28 }}>{s.title}</h3>
+                      <h3 className="capy-title" style={{ margin: '0 0 12px', fontSize: 28 }}>{s.title}</h3>
                       <p style={{ margin: 0, color: '#345a73', fontSize: 18, lineHeight: 1.6 }}>{s.body}</p>
                     </div>
                   </div>
