@@ -7,9 +7,12 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Card } from '@quietspace/shared-ui';
+import { createBrowserSupabaseClient } from '@quietspace/shared-lib';
+import { useAuth } from '../../../lib/AuthContext';
 
 export default function NewInterviewPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [email, setEmail] = React.useState('');
   const [role, setRole] = React.useState('');
   const [when, setWhen] = React.useState('');
@@ -18,22 +21,82 @@ export default function NewInterviewPage() {
   const [filePreview, setFilePreview] = React.useState<string | null>(null);
   const fileRef = React.useRef<HTMLInputElement | null>(null);
   const [submitted, setSubmitted] = React.useState(false);
+  const [error, setError] = React.useState('');
 
-  function submit(e: React.FormEvent) {
+  const getSupabase = React.useCallback(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return null;
+    }
+    return createBrowserSupabaseClient({
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    });
+  }, []);
+
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
+    setError('');
     setSubmitted(true);
-    // assemble interview object and persist to localStorage
+
+    const localPart = email ? email.split('@')[0] : '';
+    const candidateName = localPart
+      ? localPart.split(/[._-]/).map((p) => {
+          const s = String(p ?? '');
+          return s.length ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+        }).join(' ')
+      : email;
+
+    const supabase = getSupabase();
+    if (user && supabase) {
+      const { data: interview, error: interviewError } = await supabase
+        .from('planned_interviews')
+        .insert({
+          interviewer_id: user.id,
+          candidate_email: email,
+          candidate_name: candidateName,
+          role,
+          scheduled_at: new Date(when).toISOString(),
+          status: 'scheduled',
+        })
+        .select('id')
+        .single();
+
+      if (interviewError || !interview) {
+        console.warn('Failed to create planned interview in Supabase', interviewError);
+        setError(interviewError?.message ?? 'Failed to create planned interview.');
+        setSubmitted(false);
+        return;
+      }
+
+      const questionRows = questions
+        .split('\n')
+        .map((prompt) => prompt.trim())
+        .filter(Boolean)
+        .map((prompt, index) => ({
+          interview_id: interview.id,
+          prompt,
+          order_number: index + 1,
+        }));
+
+      if (questionRows.length > 0) {
+        const { error: questionsError } = await supabase.from('questions').insert(questionRows);
+        if (questionsError) {
+          console.warn('Failed to create interview questions in Supabase', questionsError);
+          setError(questionsError.message);
+          setSubmitted(false);
+          return;
+        }
+      }
+
+      window.setTimeout(() => router.push('/interviewer/dashboard'), 1200);
+      return;
+    }
+
+    // Fallback for local/demo mode when Supabase auth is unavailable.
     try {
       const raw = localStorage.getItem('capyconnect.interviews');
       const existing = raw ? (JSON.parse(raw) as any[]) : [];
       const id = `iv-${Date.now()}`;
-      const localPart = email ? email.split('@')[0] : '';
-      const candidateName = localPart
-        ? localPart.split(/[._-]/).map((p) => {
-            const s = String(p ?? '');
-            return s.length ? s.charAt(0).toUpperCase() + s.slice(1) : '';
-          }).join(' ')
-        : email;
       const interview = {
         id,
         candidate: candidateName,
@@ -163,6 +226,11 @@ export default function NewInterviewPage() {
             </Button>
             {submitted && <span style={{ color: '#5b8b6f', fontSize: 14 }}>✓ Sent — redirecting</span>}
           </div>
+          {error && (
+            <div style={{ color: '#991b1b', background: '#fee2e2', borderRadius: 10, padding: 12, fontSize: 14 }}>
+              {error}
+            </div>
+          )}
         </form>
       </Card>
     </main>

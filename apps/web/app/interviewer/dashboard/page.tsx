@@ -7,23 +7,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { Card } from '@quietspace/shared-ui';
+import { createBrowserSupabaseClient } from '@quietspace/shared-lib';
+import { useAuth } from '../../../lib/AuthContext';
 
-type InviteStatus = 'pending' | 'accepted';
-
-type InterviewItem = {
-  id: string;
-  candidate: string;
-  role: string;
-  when: string;
-  style: string;
-  status: string;
-  questionsText?: string | null;
-  attachedFileDataUrl?: string | null;
-  attachedFileName?: string | null;
-  inviteStatus?: InviteStatus;
-};
-
-const FAKE_INTERVIEWS: InterviewItem[] = [
+const FAKE_INTERVIEWS = [
   {
     id: 'demo-priya',
     candidate: 'Priya Shah',
@@ -134,72 +121,73 @@ function computeTwoWeeksMondayIso() {
 }
 
 export default function InterviewerDashboardPage() {
-  const [stored, setStored] = React.useState<InterviewItem[]>([]);
+  const [stored, setStored] = React.useState<Array<{ id: string; candidate: string; role: string; when: string; style: string; status: string }>>([]);
+  const { user, isLoading } = useAuth();
 
-  React.useEffect(() => {
-    try {
-      const raw = localStorage.getItem('capyconnect.interviews');
-      if (raw) {
-        const parsed = JSON.parse(raw) as any[];
-        const mapped = parsed.map((iv) => ({
-          id: iv.id,
-          candidate: iv.candidate ?? iv.email ?? iv.id,
-          role: iv.role ?? '—',
-          when: formatWhen(iv.when ?? iv.whenRaw ?? 'TBD'),
-          style: iv.style ?? 'default',
-          status: iv.status ?? 'scheduled',
-          questionsText: iv.questionsText ?? iv.questions ?? null,
-          attachedFileDataUrl: iv.attachedFileDataUrl ?? null,
-          attachedFileName: iv.attachedFileName ?? null,
-        }));
-        setStored(mapped);
-      }
-    } catch {}
-  }, []);
-  const [selected, setSelected] = React.useState<null | any>(null);
-  const [inviteStates, setInviteStates] = React.useState<Record<string, InviteStatus>>({});
-
-  React.useEffect(() => {
-    // initialize invite state from stored interviews and defaults for fakes
-    const map: Record<string, 'pending' | 'accepted'> = {};
-    (stored ?? []).forEach((s) => {
-      map[s.id] = (s as any).inviteStatus ?? 'pending';
-    });
-    FAKE_INTERVIEWS.forEach((f) => {
-      map[f.id] = (f as any).inviteStatus ?? 'pending';
-    });
-    setInviteStates(map);
-  }, [stored]);
-
-  function setInvite(id: string, value: 'pending' | 'accepted') {
-    setInviteStates((prev) => ({ ...prev, [id]: value }));
-    // persist to localStorage for stored interviews
-    try {
-      const raw = localStorage.getItem('capyconnect.interviews');
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as any[];
-      const idx = parsed.findIndex((p) => p.id === id);
-      if (idx >= 0) {
-        parsed[idx].inviteStatus = value;
-        localStorage.setItem('capyconnect.interviews', JSON.stringify(parsed));
-        // update local copy too
-        setStored(parsed.map((iv) => ({
-          id: iv.id,
-          candidate: iv.candidate ?? iv.email ?? iv.id,
-          role: iv.role ?? '—',
-          when: formatWhen(iv.when ?? iv.whenRaw ?? 'TBD'),
-          style: iv.style ?? 'default',
-          status: iv.status ?? 'scheduled',
-          questionsText: iv.questionsText ?? iv.questions ?? null,
-          attachedFileDataUrl: iv.attachedFileDataUrl ?? null,
-          attachedFileName: iv.attachedFileName ?? null,
-          inviteStatus: iv.inviteStatus ?? 'pending',
-        })));
-      }
-    } catch (e) {
-      // ignore
+  const getSupabase = React.useCallback(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return null;
     }
-  }
+    return createBrowserSupabaseClient({
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    });
+  }, []);
+
+  React.useEffect(() => {
+    const loadLocalInterviews = () => {
+      try {
+        const raw = localStorage.getItem('capyconnect.interviews');
+        if (raw) {
+          const parsed = JSON.parse(raw) as any[];
+          const mapped = parsed.map((iv) => ({
+            id: iv.id,
+            candidate: iv.candidate ?? iv.email ?? iv.id,
+            role: iv.role ?? '—',
+            when: iv.when ?? 'TBD',
+            style: iv.style ?? 'default',
+            status: iv.status ?? 'scheduled',
+          }));
+          setStored(mapped);
+        }
+      } catch {}
+    };
+
+    const load = async () => {
+      if (isLoading) {
+        return;
+      }
+
+      const supabase = getSupabase();
+      if (!user || !supabase) {
+        loadLocalInterviews();
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('planned_interviews')
+        .select('id, candidate_email, candidate_name, role, scheduled_at, status')
+        .eq('interviewer_id', user.id)
+        .order('scheduled_at', { ascending: true });
+
+      if (error) {
+        console.warn('Failed to load planned interviews from Supabase', error);
+        loadLocalInterviews();
+        return;
+      }
+
+      setStored((data ?? []).map((iv) => ({
+        id: iv.id,
+        candidate: iv.candidate_name ?? iv.candidate_email ?? iv.id,
+        role: iv.role ?? '—',
+        when: iv.scheduled_at ? formatInterviewTime(iv.scheduled_at) : 'TBD',
+        style: 'default',
+        status: iv.status ?? 'scheduled',
+      })));
+    };
+
+    void load();
+  }, [user, isLoading, getSupabase]);
 
   return (
     <main style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 32px' }}>
@@ -363,4 +351,15 @@ export default function InterviewerDashboardPage() {
       </div>
     </main>
   );
+}
+
+function formatInterviewTime(iso: string) {
+  const date = new Date(iso);
+  return date.toLocaleString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }

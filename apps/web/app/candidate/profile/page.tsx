@@ -8,6 +8,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../lib/AuthContext';
 import type { CommunicationStyle } from '@quietspace/shared-types';
+import { createBrowserSupabaseClient } from '@quietspace/shared-lib';
 import { BasicInfoForm } from '../../../components/onboarding/BasicInfoForm';
 import { BundlePicker } from '../../../components/onboarding/BundlePicker';
 import {
@@ -58,6 +59,37 @@ function loadFeatures(): string[] | null {
   }
 }
 
+function featuresFromPreferenceRow(prefs: {
+  captions_enabled?: boolean | null;
+  comfort_companion_enabled?: boolean | null;
+  font_scale?: number | null;
+  selected_features?: string[] | null;
+}): string[] {
+  if (prefs.selected_features?.length) {
+    return prefs.selected_features;
+  }
+
+  const features = new Set<string>();
+
+  if (prefs.captions_enabled ?? true) {
+    features.add('captions-standard');
+  }
+  if (prefs.comfort_companion_enabled) {
+    features.add('companion');
+  }
+
+  const fontScale = prefs.font_scale ?? 100;
+  if (fontScale >= 130) {
+    features.add('text-largest');
+  } else if (fontScale >= 115) {
+    features.add('text-larger');
+  } else {
+    features.add('text-standard');
+  }
+
+  return Array.from(features);
+}
+
 export default function CandidateProfilePage() {
   const { user } = useAuth();
   const [tab, setTab] = React.useState<Tab>('profile');
@@ -70,19 +102,97 @@ export default function CandidateProfilePage() {
   const [initialFeatures, setInitialFeatures] = React.useState<string[]>([]);
   const [isEditing, setIsEditing] = React.useState(false);
 
-  React.useEffect(() => {
-    setInfo(loadProfile());
-    try {
-      const rawRole = localStorage.getItem('capyconnect.role');
-      setRole((rawRole as any) ?? null);
-    } catch {}
-    const prefs = loadPrefs();
-    const features = loadFeatures();
-    const bundle = prefs?.communicationStyle ?? 'default';
-    setInitialBundle(bundle);
-    setInitialFeatures(features ?? BUNDLE_FEATURES[bundle]);
-    setHydrated(true);
+  const getSupabase = React.useCallback(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return null;
+    }
+    return createBrowserSupabaseClient({
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    });
   }, []);
+
+  React.useEffect(() => {
+    const load = async () => {
+      if (!user) {
+        setHydrated(true);
+        return;
+      }
+      const supabase = getSupabase();
+      if (!supabase) {
+        setInfo(loadProfile());
+        const rawRole = typeof window !== 'undefined' ? localStorage.getItem('capyconnect.role') : null;
+        setRole((rawRole as any) ?? null);
+        const prefs = loadPrefs();
+        const features = loadFeatures();
+        const bundle = prefs?.communicationStyle ?? 'default';
+        setInitialBundle(bundle);
+        setInitialFeatures(features ?? BUNDLE_FEATURES[bundle]);
+        setHydrated(true);
+        return;
+      }
+
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!profileError && profile) {
+          setInfo({
+            ...EMPTY_INFO,
+            fullName: profile.full_name ?? '',
+            username: profile.username ?? '',
+            birthdate: profile.birthdate ?? '',
+            location: profile.location ?? '',
+            avatarDataUrl: profile.avatar_url ?? '',
+          });
+          setRole((profile.role as any) ?? null);
+        } else {
+          setInfo(loadProfile());
+          const rawRole = typeof window !== 'undefined' ? localStorage.getItem('capyconnect.role') : null;
+          setRole((rawRole as any) ?? null);
+        }
+      } catch (err) {
+        console.warn('Failed to load profile from Supabase', err);
+        setInfo(loadProfile());
+      }
+
+      try {
+        if (supabase) {
+          const { data: prefs, error: prefsError } = await supabase
+            .from('user_preferences')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+          if (!prefsError && prefs) {
+            const bundle = (prefs.communication_style as CommunicationStyle | null) ?? 'default';
+            setInitialBundle(bundle);
+            setInitialFeatures(featuresFromPreferenceRow(prefs));
+          } else {
+            const localPrefs = loadPrefs();
+            const localFeatures = loadFeatures();
+            const bundle = localPrefs?.communicationStyle ?? 'default';
+            setInitialBundle(bundle);
+            setInitialFeatures(localFeatures ?? BUNDLE_FEATURES[bundle]);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load preferences from Supabase', err);
+        const localPrefs = loadPrefs();
+        const localFeatures = loadFeatures();
+        const bundle = localPrefs?.communicationStyle ?? 'default';
+        setInitialBundle(bundle);
+        setInitialFeatures(localFeatures ?? BUNDLE_FEATURES[bundle]);
+      }
+
+      setHydrated(true);
+    };
+
+    void load();
+  }, [user, getSupabase]);
 
   // Expose a global save function for the header to call and inform header when editing
   React.useEffect(() => {
@@ -108,37 +218,54 @@ export default function CandidateProfilePage() {
     };
   }, [isEditing]);
 
-  function handleProfileSave() {
+  async function handleProfileSave() {
     const profile = {
-      fullName: info.fullName.trim(),
+      full_name: info.fullName.trim(),
       username: info.username.trim(),
       birthdate: info.birthdate,
       location: info.location.trim(),
-      avatarDataUrl: info.avatarDataUrl,
+      avatar_url: info.avatarDataUrl,
     };
+
+    const supabase = getSupabase();
+    if (user && supabase) {
+      const { error } = await supabase.from('user_profiles').upsert(
+        {
+          user_id: user.id,
+          ...profile,
+          role: role ?? 'candidate',
+        },
+        { onConflict: 'user_id' }
+      );
+      if (error) {
+        console.warn('Failed to persist profile to Supabase', error);
+      }
+    }
+
     try {
-      localStorage.setItem('capyconnect.profile', JSON.stringify(profile));
-      // if role exists in localStorage, ensure cookie is set as well
-      try {
-        const rawRole = localStorage.getItem('capyconnect.role') ?? 'candidate';
-        if (typeof document !== 'undefined') {
-          document.cookie = `capyconnect.role=${encodeURIComponent(rawRole)}; Path=/; SameSite=Lax`;
-        }
-      } catch {}
+      if (typeof document !== 'undefined') {
+        document.cookie = `capyconnect.role=${encodeURIComponent(role ?? 'candidate')}; Path=/; SameSite=Lax`;
+      }
     } catch {}
+
     setProfileSavedAt(Date.now());
     setIsEditing(false);
   }
 
-  function handlePreferencesSave(bundle: CommunicationStyle, features: string[]) {
+  async function handlePreferencesSave(bundle: CommunicationStyle, features: string[]) {
     const prefs = {
-      communicationStyle: bundle,
+      user_id: user?.id,
+      communication_style: bundle,
       ...derivePreferencesFromFeatures(features),
     };
-    try {
-      localStorage.setItem('capyconnect.preferences', JSON.stringify(prefs));
-      localStorage.setItem('capyconnect.features', JSON.stringify(features));
-    } catch {}
+    const supabase = getSupabase();
+    if (user && supabase) {
+      const { error } = await supabase.from('user_preferences').upsert(prefs, { onConflict: 'user_id' });
+      if (error) {
+        console.warn('Failed to persist preferences to Supabase', error);
+      }
+    }
+
     setPrefsSavedAt(Date.now());
   }
 
