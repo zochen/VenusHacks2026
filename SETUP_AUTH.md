@@ -150,6 +150,14 @@ CREATE POLICY "Interviewers can insert interview questions" ON public.questions
       AND auth.uid() = planned_interviews.interviewer_id
     )
   );
+CREATE POLICY "Interviewers can delete interview questions" ON public.questions
+  FOR DELETE USING (
+    EXISTS (
+      SELECT 1 FROM public.planned_interviews
+      WHERE planned_interviews.id = interview_id
+      AND auth.uid() = planned_interviews.interviewer_id
+    )
+  );
 
 ```
 
@@ -180,6 +188,15 @@ CREATE POLICY "Interviewers can insert their interviews" ON public.planned_inter
 
 CREATE POLICY "Interviewers can insert interview questions" ON public.questions
   FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.planned_interviews
+      WHERE planned_interviews.id = interview_id
+      AND auth.uid() = planned_interviews.interviewer_id
+    )
+  );
+
+CREATE POLICY "Interviewers can delete interview questions" ON public.questions
+  FOR DELETE USING (
     EXISTS (
       SELECT 1 FROM public.planned_interviews
       WHERE planned_interviews.id = interview_id
