@@ -22,12 +22,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             alignItems: 'center',
             padding: '16px 32px',
             borderBottom: '1px solid #e6eef6',
-            background: '#ffffff',
+            background: '#d0ddf0ff',
           }}
         >
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700, fontSize: 18, color: '#123244' }}>
-            <span style={{ fontSize: 22 }}>🪼</span>
-            <span style={{ marginLeft: 6 }}>CapyConnect</span>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, fontWeight: 700, fontSize: 18, color: '#123244', textDecoration: 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <img className="site-logo" src="/CapyConnect_logo.PNG" alt="CapyConnect" />
+            </div>
+            <span style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}>CapyConnect</span>
           </Link>
 
           <nav style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
@@ -36,6 +38,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" style={{ fontSize: 14, color: '#123244', textDecoration: 'none' }}>About</Link>
           </nav>
         </header>
+        <style>{`
+          .site-logo { width: 96px; height: 96px; object-fit: contain; border-radius: 10px; display: block; }
+          @media (max-width: 900px) { .site-logo { width: 72px; height: 72px; } }
+          @media (max-width: 480px) { .site-logo { width: 48px; height: 48px; } }
+          @media (max-width: 420px) { header { padding: 12px 16px; } }
+        `}</style>
         {children}
       </body>
     </html>
