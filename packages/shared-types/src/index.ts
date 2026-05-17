@@ -2,18 +2,49 @@
 // Surface: SHARED — used by web + extension
 // Do not edit without coordinating in group chat — this package is load-bearing for everyone.
 
-// TODO(Person 3): finalize User shape once Supabase auth schema is locked in
 // TODO(Person 3): decide whether Interview includes a denormalized question list or a join
 // TODO(Person 3): align ExtensionMessage variants with whatever messaging.ts ends up needing
 // TODO(Person 3): add Zod schemas (or similar) for runtime validation at API + message boundaries
 
 export type CommunicationStyle = 'default' | 'relaxed' | 'focus';
 
+/**
+ * Represents an authenticated user from Supabase Auth
+ */
 export interface User {
   id: string;
   email: string;
   displayName?: string;
-  preferences?: Preferences;
+  role: 'candidate' | 'interviewer' | 'both';
+  createdAt: string;
+}
+
+/**
+ * User profile data stored in the database
+ */
+export interface UserProfile {
+  id: string;
+  userId: string;
+  fullName: string;
+  username: string;
+  birthdate?: string;
+  location?: string;
+  avatarUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * User preferences and settings
+ */
+export interface UserPreferences {
+  id: string;
+  userId: string;
+  communicationStyle: CommunicationStyle;
+  captionsEnabled: boolean;
+  comfortCompanionEnabled: boolean;
+  fontScale: number;
+  updatedAt: string;
 }
 
 export interface Preferences {
@@ -29,6 +60,9 @@ export interface Question {
   notes?: string;
 }
 
+/**
+ * Scheduled interview between a candidate and interviewer
+ */
 export interface Interview {
   id: string;
   candidateId: string;

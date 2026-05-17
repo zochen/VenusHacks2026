@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@quietspace/shared-types": "*",
+    "@supabase/ssr": "^0.0.10",
     "@supabase/supabase-js": "^2.43.4",
     "openai": "^4.47.1"
   }
