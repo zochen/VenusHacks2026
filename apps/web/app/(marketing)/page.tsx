@@ -162,12 +162,11 @@ export default function MarketingPage() {
             offer live accessibility support.
           </p>
 
-          <ul style={{ margin: '16px 0 24px', paddingLeft: 18, color: '#56778d', lineHeight: 1.6 }}>
-            <li>Customizable Interview Experiences</li>
-            <li>Reduced Cognitive Overload</li>
-            <li>Structured Communication</li>
-            <li>Live Accessibility Support</li>
-          </ul>
+          <p style={{ fontSize: 18, color: '#56778d', margin: '16px 0 24px' }}>
+            More clarity. Less pressure.
+            <br />
+            Better interviews for everyone.
+          </p>
 
           <div style={{ display: 'flex', gap: 12 }}>
             <Link
@@ -191,9 +190,8 @@ export default function MarketingPage() {
               className="capy-btn"
               style={{
                 padding: '14px 22px',
-                background: '#fff',
-                color: '#123244',
-                border: '1px solid #e6eef6',
+                background: '#5b8b6f',
+                color: '#fff',
                 borderRadius: 12,
                 fontWeight: 600,
                 fontSize: 16,
@@ -344,7 +342,7 @@ export default function MarketingPage() {
       {/* Footer CTA */}
       <section style={{ marginTop: 56, padding: 28, borderRadius: 12, background: '#f7fbff', textAlign: 'center' }}>
         <h3 className="capy-title" style={{ margin: '0 0 8px', fontSize: 20 }}>Ready to try a better interview experience?</h3>
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 28 }}>
           <Link href="/demo/index.html" target="_blank" rel="noopener noreferrer" className="capy-btn" style={{ padding: '12px 20px', background: '#4a90e2', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 700, marginRight: 12 }}>Try Interactive Demo</Link>
           <Link href="/download-extension" className="capy-btn" style={{ padding: '12px 20px', background: '#bfeaf0', color: '#123244', borderRadius: 10, textDecoration: 'none', fontWeight: 700 }}>Download Extension</Link>
         </div>
