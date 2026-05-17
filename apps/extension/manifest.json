@@ -3,35 +3,14 @@
   "name": "CapyConnect",
   "version": "0.0.1",
   "description": "Accessibility overlay for technical interviews on Google Meet, Zoom, and Microsoft Teams.",
-  "permissions": ["storage", "activeTab", "scripting", "tabs"],
-  "host_permissions": [
-    "https://meet.google.com/*",
-    "https://*.zoom.us/*",
-    "https://teams.microsoft.com/*",
-    "http://localhost:3000/*",
-    "http://localhost/*"
-  ],
+  "permissions": ["storage", "activeTab", "tabs"],
   "background": {
     "service_worker": "src/background/index.ts",
     "type": "module"
   },
-  "content_scripts": [
-    {
-      "matches": [
-        "https://meet.google.com/*",
-        "https://*.zoom.us/*",
-        "https://teams.microsoft.com/*",
-        "http://localhost:3000/demo/*",
-        "http://localhost/demo/*"
-      ],
-      "js": ["src/content/index.tsx"],
-      "run_at": "document_end",
-      "all_frames": false
-    }
-  ],
   "action": {
     "default_popup": "src/popup/index.html",
-  "default_title": "CapyConnect"
+    "default_title": "CapyConnect"
   },
   "options_page": "src/options/index.html",
   "web_accessible_resources": [
