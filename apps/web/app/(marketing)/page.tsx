@@ -46,6 +46,11 @@ const extras = [
 
 export default function MarketingPage() {
   useEffect(() => {
+    document.body.classList.add('home');
+    return () => document.body.classList.remove('home');
+  }, []);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     const els = Array.from(document.querySelectorAll('.pair')) as HTMLElement[];
     const obs = new IntersectionObserver(
@@ -134,7 +139,7 @@ export default function MarketingPage() {
             </Link>
 
             <Link
-              href="/onboarding"
+              href="/auth/signup"
               className="capy-btn"
               style={{
                 padding: '14px 22px',
@@ -160,9 +165,25 @@ export default function MarketingPage() {
         </div>
       </section>
 
+      {/* Full-bleed wave divider with colored fill below */}
+      <div
+        aria-hidden="true"
+        style={{
+          width: '100vw',
+          marginLeft: 'calc(50% - 50vw)',
+          marginRight: 'calc(50% - 50vw)',
+          lineHeight: 0,
+        }}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 180 }}>
+          <path fill="#D8ECF0" fillOpacity="1" d="M0,256L48,234.7C96,213,192,171,288,165.3C384,160,480,192,576,213.3C672,235,768,245,864,229.3C960,213,1056,171,1152,165.3C1248,160,1344,192,1392,208L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
+        </svg>
+        <div style={{ background: 'linear-gradient(180deg, #D8ECF0 0%, #D8ECF0 40%, rgba(216,236,240,0) 100%)', height: 420, marginBottom: -420, pointerEvents: 'none' }} />
+      </div>
+
       {/* Why CapyConnect? — alternating flowing sections */}
       <section style={{ marginBottom: 48 }}>
-        <h2 className="capy-title" style={{ fontSize: 28, margin: '0 0 18px' }}>Why CapyConnect?</h2>
+        <h2 className="capy-title" style={{ fontSize: 48, margin: '0 0 18px' }}>Why CapyConnect?</h2>
 
         {/** Build a combined array so we can render six alternating sections */}
         {(() => {
@@ -173,25 +194,83 @@ export default function MarketingPage() {
           }
 
           return pairs.map((p, pairIdx) => (
-            <section key={`pair-${pairIdx}`} className="pair" style={{ height: '100vh', overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-              <div className="pair-inner" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                {[p.top, p.bottom].map((s, idx) => (
-                  <div key={s.title} className="panel" style={{ flex: '1 1 50vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 28px', boxSizing: 'border-box' }}>
-                    <div style={{ maxWidth: 900, textAlign: idx === 0 ? 'left' : 'right' }}>
-                      <h3 className="capy-title" style={{ margin: '0 0 12px', fontSize: 28 }}>{s.title}</h3>
-                      <p style={{ margin: 0, color: '#345a73', fontSize: 18, lineHeight: 1.6 }}>{s.body}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+            <React.Fragment key={`pair-${pairIdx}`}>
+              <section className="pair" style={{ height: '100vh', overflow: 'visible', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                <div className="pair-inner" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  {[p.top, p.bottom].map((s, idx) => (
+                    <React.Fragment key={s.title}>
+                      <div
+                        className="panel"
+                        style={{
+                          flex: '1 1 50vh',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '48px 28px',
+                          boxSizing: 'border-box',
+                          ...(idx === 0
+                            ? { alignItems: 'flex-start', paddingTop: 0 }
+                            : {}),
+                          ...(idx === 1
+                            ? {
+                                background: 'linear-gradient(180deg, #BDD2E4 0%, #BDD2E4 60%, rgba(189,210,228,0) 100%)',
+                                width: '100vw',
+                                marginLeft: 'calc(50% - 50vw)',
+                                marginRight: 'calc(50% - 50vw)',
+                                alignItems: 'flex-start',
+                                paddingTop: 24,
+                              }
+                            : {}),
+                        }}
+                      >
+                        <div style={{ maxWidth: 900, textAlign: idx === 0 ? 'left' : 'right' }}>
+                          <h3 className="capy-title" style={{ margin: '0 0 12px', fontSize: 28 }}>{s.title}</h3>
+                          <p style={{ margin: 0, color: '#345a73', fontSize: 18, lineHeight: 1.6 }}>{s.body}</p>
+                        </div>
+                      </div>
+                      {idx === 0 && (
+                        <div
+                          aria-hidden="true"
+                          style={{
+                            flex: '0 0 auto',
+                            width: '100vw',
+                            marginLeft: 'calc(50% - 50vw)',
+                            marginRight: 'calc(50% - 50vw)',
+                            lineHeight: 0,
+                          }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 120 }}>
+                            <path fill="#BDD2E4" fillOpacity="1" d="M0,64L60,74.7C120,85,240,107,360,101.3C480,96,600,64,720,48C840,32,960,32,1080,42.7C1200,53,1320,75,1380,85.3L1440,96L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z" />
+                          </svg>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </section>
+              {pairIdx < pairs.length - 1 && (
+                <div
+                  aria-hidden="true"
+                  style={{
+                    width: '100vw',
+                    marginLeft: 'calc(50% - 50vw)',
+                    marginRight: 'calc(50% - 50vw)',
+                    lineHeight: 0,
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 140 }}>
+                    <path fill="#D8ECF0" fillOpacity="1" d="M0,256L48,234.7C96,213,192,171,288,165.3C384,160,480,192,576,213.3C672,235,768,245,864,229.3C960,213,1056,171,1152,165.3C1248,160,1344,192,1392,208L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
+                  </svg>
+                  <div style={{ background: 'linear-gradient(180deg, #D8ECF0 0%, #D8ECF0 40%, rgba(216,236,240,0) 100%)', height: 420, marginBottom: -420, pointerEvents: 'none' }} />
+                </div>
+              )}
+            </React.Fragment>
           ));
         })()}
 
         {/* pair/panel layout + fade-in styles */}
         <style dangerouslySetInnerHTML={{ __html: `
-          main { scroll-snap-type: y mandatory; }
-          section.pair { scroll-snap-align: start; }
+          main { scroll-snap-type: none; }
           .pair { opacity: 0.02; transition: opacity 700ms ease; }
           .pair.in-view { opacity: 1; }
           .panel { opacity: 0; transform: translateY(18px); transition: opacity 700ms ease, transform 700ms cubic-bezier(0.2,0.8,0.2,1); }
@@ -212,7 +291,8 @@ export default function MarketingPage() {
       <section style={{ marginTop: 56, padding: 28, borderRadius: 12, background: '#f7fbff', textAlign: 'center' }}>
         <h3 className="capy-title" style={{ margin: '0 0 8px', fontSize: 20 }}>Ready to try a better interview experience?</h3>
         <div style={{ marginTop: 12 }}>
-          <Link href="/candidate/interview" className="capy-btn" style={{ padding: '12px 20px', background: '#4a90e2', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 700 }}>Try Interactive Demo</Link>
+          <Link href="/candidate/interview" className="capy-btn" style={{ padding: '12px 20px', background: '#4a90e2', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 700, marginRight: 12 }}>Try Interactive Demo</Link>
+          <Link href="/download-extension" className="capy-btn" style={{ padding: '12px 20px', background: '#bfeaf0', color: '#123244', borderRadius: 10, textDecoration: 'none', fontWeight: 700 }}>Download Extension</Link>
         </div>
       </section>
     </main>

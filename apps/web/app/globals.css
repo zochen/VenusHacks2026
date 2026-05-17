@@ -18,6 +18,7 @@
 html, body {
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
   background: #f7fbff; /* light blue */
   color: #123244; /* deep blue-gray */
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -28,6 +29,8 @@ button, .capy-btn {
   font-family: 'Darumadrop One', 'Inter', system-ui, -apple-system, sans-serif;
   letter-spacing: 0.4px;
 }
+
+body.home header { background: #ffffff !important; }
 
 * {
   box-sizing: border-box;
