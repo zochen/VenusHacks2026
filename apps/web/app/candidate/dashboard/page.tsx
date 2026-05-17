@@ -7,6 +7,8 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { Card, Button } from '@quietspace/shared-ui';
+import { createBrowserSupabaseClient } from '@quietspace/shared-lib';
+import { useAuth } from '../../../lib/AuthContext';
 
 type Profile = {
   fullName: string;
@@ -111,14 +113,65 @@ function loadProfile(): Profile | null {
 }
 
 export default function CandidateDashboardPage() {
+  const { user, isLoading } = useAuth();
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [now, setNow] = React.useState(() => new Date());
 
+  const getSupabase = React.useCallback(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return null;
+    }
+    return createBrowserSupabaseClient({
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    });
+  }, []);
+
   React.useEffect(() => {
-    setProfile(loadProfile());
     const t = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(t);
   }, []);
+
+  React.useEffect(() => {
+    const load = async () => {
+      if (isLoading) {
+        return;
+      }
+
+      if (!user) {
+        setProfile(loadProfile());
+        return;
+      }
+
+      const supabase = getSupabase();
+      if (!supabase) {
+        setProfile(loadProfile());
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('full_name, username, birthdate, location, avatar_url')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error || !data) {
+        console.warn('Failed to load profile from Supabase', error);
+        setProfile(null);
+        return;
+      }
+
+      setProfile({
+        fullName: data.full_name ?? '',
+        username: data.username ?? '',
+        birthdate: data.birthdate ?? '',
+        location: data.location ?? '',
+        avatarDataUrl: data.avatar_url ?? '',
+      });
+    };
+
+    void load();
+  }, [user, isLoading, getSupabase]);
 
   const displayName = profile?.fullName?.trim() || 'there';
   const firstName = displayName.split(' ')[0]!;

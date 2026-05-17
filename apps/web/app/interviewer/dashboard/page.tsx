@@ -7,21 +7,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { Card } from '@quietspace/shared-ui';
-
-type InviteStatus = 'pending' | 'accepted';
-
-type InterviewItem = {
-  id: string;
-  candidate: string;
-  role: string;
-  when: string;
-  style: string;
-  status: string;
-  questionsText?: string | null;
-  attachedFileDataUrl?: string | null;
-  attachedFileName?: string | null;
-  inviteStatus?: InviteStatus;
-};
+import { createBrowserSupabaseClient } from '@quietspace/shared-lib';
+import { useAuth } from '../../../lib/AuthContext';
 
 const FAKE_INTERVIEWS: InterviewItem[] = [
   {
@@ -52,6 +39,42 @@ const FAKE_INTERVIEWS: InterviewItem[] = [
     inviteStatus: 'pending',
   },
 ];
+
+type BiasSeverity = 'high' | 'medium' | 'low' | 'none';
+
+type BiasFinding = {
+  severity: BiasSeverity;
+  issues: string[];
+  explanations: string[];
+  suggestions: string[];
+};
+
+type InviteStatus = 'pending' | 'accepted';
+
+type InterviewItem = {
+  id: string;
+  candidate: string;
+  role: string;
+  when: string;
+  style: string;
+  status: string;
+  questionsText?: string | null;
+  attachedFileDataUrl?: string | null;
+  attachedFileName?: string | null;
+  inviteStatus?: InviteStatus;
+};
+
+const severityRank: Record<BiasSeverity, number> = { high: 3, medium: 2, low: 1, none: 0 };
+
+const severityColor: Record<BiasSeverity, { bg: string; border: string; label: string }> = {
+  high:   { bg: '#fde2e1', border: '#f4a8a4', label: '#8a1f1a' },
+  medium: { bg: '#fef6d4', border: '#f0d77a', label: '#7a5b10' },
+  low:    { bg: '#e7f2dc', border: '#bcd9a2', label: '#3f5d22' },
+  none:   { bg: '#eef2ed', border: '#d6dcd6', label: '#2a2d33' },
+};
+
+// Bias evaluation is performed server-side via /api/ai/evaluate-question (Gemini).
+
 
 const styleColor: Record<string, { bg: string; fg: string }> = {
   default: { bg: '#eef2ed', fg: '#2a2d33' },
@@ -135,29 +158,213 @@ function computeTwoWeeksMondayIso() {
 
 export default function InterviewerDashboardPage() {
   const [stored, setStored] = React.useState<InterviewItem[]>([]);
+  const { user, isLoading } = useAuth();
+
+  const getSupabase = React.useCallback(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return null;
+    }
+    return createBrowserSupabaseClient({
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    });
+  }, []);
 
   React.useEffect(() => {
+    const loadLocalInterviews = () => {
+      try {
+        const raw = localStorage.getItem('capyconnect.interviews');
+        if (raw) {
+          const parsed = JSON.parse(raw) as any[];
+          const mapped: InterviewItem[] = parsed.map((iv) => ({
+            id: iv.id,
+            candidate: iv.candidate ?? iv.email ?? iv.id,
+            role: iv.role ?? '—',
+            when: formatWhen(iv.when ?? iv.whenRaw ?? 'TBD'),
+            style: iv.style ?? 'default',
+            status: iv.status ?? 'scheduled',
+            questionsText: iv.questionsText ?? iv.questions ?? null,
+            attachedFileDataUrl: iv.attachedFileDataUrl ?? null,
+            attachedFileName: iv.attachedFileName ?? null,
+            inviteStatus: iv.inviteStatus ?? 'pending',
+          }));
+          setStored(mapped);
+        }
+      } catch {}
+    };
+
+    const load = async () => {
+      if (isLoading) return;
+      const supabase = getSupabase();
+      if (!user || !supabase) {
+        loadLocalInterviews();
+        return;
+      }
+      const { data, error } = await supabase
+        .from('planned_interviews')
+        .select('id, candidate_email, candidate_name, role, scheduled_at, status')
+        .eq('interviewer_id', user.id)
+        .order('scheduled_at', { ascending: true });
+      if (error) {
+        console.warn('Failed to load planned interviews from Supabase', error);
+        loadLocalInterviews();
+        return;
+      }
+      setStored((data ?? []).map((iv: any) => ({
+        id: iv.id,
+        candidate: iv.candidate_name ?? iv.candidate_email ?? iv.id,
+        role: iv.role ?? '—',
+        when: iv.scheduled_at ? formatInterviewTime(iv.scheduled_at) : 'TBD',
+        style: 'default',
+        status: iv.status ?? 'scheduled',
+        questionsText: null,
+        attachedFileDataUrl: null,
+        attachedFileName: null,
+        inviteStatus: 'pending',
+      })));
+    };
+
+    void load();
+  }, [user, isLoading, getSupabase]);
+
+  const [selected, setSelected] = React.useState<null | any>(null);
+  const [inviteStates, setInviteStates] = React.useState<Record<string, InviteStatus>>({});
+  const [editingQuestions, setEditingQuestions] = React.useState<string[] | null>(null);
+  const [evaluation, setEvaluation] = React.useState<{ text: string; finding: BiasFinding }[] | null>(null);
+  const [expandedEval, setExpandedEval] = React.useState<number | null>(null);
+  const [evalDirty, setEvalDirty] = React.useState(false);
+  const [flashing, setFlashing] = React.useState(false);
+  const [evalLoading, setEvalLoading] = React.useState(false);
+  const [evalError, setEvalError] = React.useState<string | null>(null);
+
+  async function fetchFindings(questions: string[]): Promise<BiasFinding[]> {
+    const res = await fetch('/api/ai/evaluate-question', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questions }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.error || `Request failed (${res.status})`);
+    }
+    const arr: any[] = Array.isArray(data?.findings) ? data.findings : [];
+    return questions.map((_, i) => {
+      const f = arr[i] ?? {};
+      return {
+        severity: f.severity ?? 'none',
+        issues: f.issues ?? [],
+        explanations: f.explanations ?? [],
+        suggestions: f.suggestions ?? [],
+      };
+    });
+  }
+
+  async function runEvaluation() {
+    if (!selected?.questionsText) return;
+    const items = String(selected.questionsText).split('\n').map((s) => s.trim()).filter(Boolean);
+    setEvalLoading(true);
+    setEvalError(null);
+    setEvaluation(null);
+    setExpandedEval(null);
+    setEvalDirty(false);
+    try {
+      const findings = await fetchFindings(items);
+      const scored = items.map((text, i) => ({ text, finding: findings[i]! }));
+      scored.sort((a, b) => severityRank[b.finding.severity] - severityRank[a.finding.severity]);
+      setEvaluation(scored);
+    } catch (err: any) {
+      setEvalError(err?.message || 'Failed to evaluate questions.');
+    } finally {
+      setEvalLoading(false);
+    }
+  }
+
+  function clearEvaluation() {
+    if (evalDirty) { triggerFlash(); return; }
+    setEvaluation(null);
+    setExpandedEval(null);
+    setEvalError(null);
+  }
+
+  function applyVariation(idx: number, suggestion: string) {
+    if (!evaluation) return;
+    const next = [...evaluation];
+    // Suggestions are LLM-generated non-biased rewrites; mark as clean optimistically.
+    next[idx] = { text: suggestion, finding: { severity: 'none', issues: [], explanations: [], suggestions: [] } };
+    setEvaluation(next);
+    setEvalDirty(true);
+  }
+
+  function saveEvaluation() {
+    if (!selected || !evaluation) return;
+    const newText = evaluation.map((e) => e.text.trim()).filter(Boolean).join('\n') || null;
+    setSelected({ ...selected, questionsText: newText });
+    setStored((prev) => prev.map((iv) => (iv.id === selected.id ? { ...iv, questionsText: newText } : iv)));
     try {
       const raw = localStorage.getItem('capyconnect.interviews');
       if (raw) {
         const parsed = JSON.parse(raw) as any[];
-        const mapped = parsed.map((iv) => ({
-          id: iv.id,
-          candidate: iv.candidate ?? iv.email ?? iv.id,
-          role: iv.role ?? '—',
-          when: formatWhen(iv.when ?? iv.whenRaw ?? 'TBD'),
-          style: iv.style ?? 'default',
-          status: iv.status ?? 'scheduled',
-          questionsText: iv.questionsText ?? iv.questions ?? null,
-          attachedFileDataUrl: iv.attachedFileDataUrl ?? null,
-          attachedFileName: iv.attachedFileName ?? null,
-        }));
-        setStored(mapped);
+        const idx = parsed.findIndex((p) => p.id === selected.id);
+        if (idx >= 0) {
+          parsed[idx].questionsText = newText;
+          localStorage.setItem('capyconnect.interviews', JSON.stringify(parsed));
+        }
       }
     } catch {}
-  }, []);
-  const [selected, setSelected] = React.useState<null | any>(null);
-  const [inviteStates, setInviteStates] = React.useState<Record<string, InviteStatus>>({});
+    setEvalDirty(false);
+  }
+
+  function triggerFlash() {
+    setFlashing(true);
+    window.setTimeout(() => setFlashing(false), 700);
+  }
+
+  function attemptClose() {
+    if (evalDirty) { triggerFlash(); return; }
+    setSelected(null);
+    setEditingQuestions(null);
+    setEvaluation(null);
+    setExpandedEval(null);
+    setEvalDirty(false);
+    setEvalError(null);
+    setEvalLoading(false);
+  }
+
+  function startEditing() {
+    if (!selected) return;
+    const text = selected.questionsText ? String(selected.questionsText) : '';
+    const arr = text.split('\n').map((s) => s.trim()).filter(Boolean);
+    setEditingQuestions(arr.length ? arr : ['']);
+    setEvaluation(null);
+    setExpandedEval(null);
+  }
+
+  function cancelEditing() {
+    setEditingQuestions(null);
+  }
+
+  function saveEditing() {
+    if (!selected || !editingQuestions) return;
+    const joined = editingQuestions.map((q) => q.trim()).filter(Boolean).join('\n');
+    const newText = joined || null;
+
+    setSelected({ ...selected, questionsText: newText });
+    setStored((prev) => prev.map((iv) => (iv.id === selected.id ? { ...iv, questionsText: newText } : iv)));
+
+    try {
+      const raw = localStorage.getItem('capyconnect.interviews');
+      if (raw) {
+        const parsed = JSON.parse(raw) as any[];
+        const idx = parsed.findIndex((p) => p.id === selected.id);
+        if (idx >= 0) {
+          parsed[idx].questionsText = newText;
+          localStorage.setItem('capyconnect.interviews', JSON.stringify(parsed));
+        }
+      }
+    } catch {}
+
+    setEditingQuestions(null);
+  }
 
   React.useEffect(() => {
     // initialize invite state from stored interviews and defaults for fakes
@@ -236,10 +443,17 @@ export default function InterviewerDashboardPage() {
 
           return (
             <div key={iv.id} style={{ color: 'inherit', textDecoration: 'none' }}>
-              <button
-                type="button"
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelected(iv)}
-                style={{ all: 'unset', width: '100%', display: 'block', cursor: 'pointer' }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelected(iv);
+                  }
+                }}
+                style={{ width: '100%', display: 'block', cursor: 'pointer' }}
               >
                 <Card style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                   <div
@@ -311,7 +525,7 @@ export default function InterviewerDashboardPage() {
                     </button>
                   </div>
                 </Card>
-              </button>
+              </div>
             </div>
           );
         })}
@@ -322,9 +536,20 @@ export default function InterviewerDashboardPage() {
             role="dialog"
             aria-modal
             style={{ position: 'fixed', inset: 0, background: 'rgba(12,18,22,0.44)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}
-            onClick={() => setSelected(null)}
+            onClick={attemptClose}
           >
-            <div style={{ width: 'min(920px, 92%)' }} onClick={(e) => e.stopPropagation()}>
+            <style>{`
+              @keyframes capyFlash {
+                0%, 100% { transform: translateX(0); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+                15% { transform: translateX(-4px); box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.45); }
+                30% { transform: translateX(4px); box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.35); }
+                45% { transform: translateX(-3px); box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.45); }
+                60% { transform: translateX(3px); box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.30); }
+                75% { transform: translateX(-2px); box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.20); }
+              }
+              .capy-flash { animation: capyFlash 0.7s ease-in-out; }
+            `}</style>
+            <div style={{ width: 'min(920px, 92%)', maxHeight: '90vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
               <Card style={{ padding: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
                   <div>
@@ -333,13 +558,243 @@ export default function InterviewerDashboardPage() {
                     <div style={{ color: '#6b7280', marginTop: 6 }}>{selected.role} · {selected.when}</div>
                   </div>
                   <div>
-                    <button type="button" onClick={() => setSelected(null)} style={{ all: 'unset', cursor: 'pointer', padding: '8px 10px', borderRadius: 8, background: '#eef2ed' }}>Close</button>
+                    <button
+                      type="button"
+                      onClick={attemptClose}
+                      className={flashing ? 'capy-flash' : undefined}
+                      style={{ all: 'unset', cursor: 'pointer', padding: '8px 10px', borderRadius: 8, background: '#eef2ed' }}
+                    >
+                      Close
+                    </button>
                   </div>
                 </div>
 
                 <div style={{ marginTop: 18 }}>
-                  <h3 style={{ margin: '0 0 8px' }}>Questions</h3>
-                  {selected.questionsText ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <h3 style={{ margin: 0 }}>Questions</h3>
+                    {editingQuestions === null ? (
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {selected.questionsText && (
+                          evaluation === null ? (
+                            <button
+                              type="button"
+                              onClick={runEvaluation}
+                              disabled={evalLoading}
+                              style={{ all: 'unset', cursor: evalLoading ? 'wait' : 'pointer', padding: '6px 12px', borderRadius: 8, background: '#e0e7ff', color: '#3730a3', fontSize: 14, fontWeight: 600, opacity: evalLoading ? 0.7 : 1 }}
+                            >
+                              {evalLoading ? 'Evaluating…' : 'Evaluate for bias'}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={clearEvaluation}
+                              style={{ all: 'unset', cursor: 'pointer', padding: '6px 12px', borderRadius: 8, background: '#f3f3f3', fontSize: 14, fontWeight: 600 }}
+                            >
+                              Clear evaluation
+                            </button>
+                          )
+                        )}
+                        <button
+                          type="button"
+                          onClick={startEditing}
+                          style={{ all: 'unset', cursor: 'pointer', padding: '6px 12px', borderRadius: 8, background: '#eef2ed', fontSize: 14, fontWeight: 600 }}
+                        >
+                          {selected.questionsText ? 'Edit' : '+ Add questions'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          type="button"
+                          onClick={cancelEditing}
+                          style={{ all: 'unset', cursor: 'pointer', padding: '6px 12px', borderRadius: 8, background: '#f3f3f3', fontSize: 14, fontWeight: 600 }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={saveEditing}
+                          style={{ all: 'unset', cursor: 'pointer', padding: '6px 12px', borderRadius: 8, background: '#5b8b6f', color: '#fff', fontSize: 14, fontWeight: 600 }}
+                        >
+                          Save
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {editingQuestions !== null ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {editingQuestions.map((q, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                          <div style={{ padding: '10px 0', color: '#6b7280', fontSize: 14, minWidth: 24, textAlign: 'right' }}>
+                            {i + 1}.
+                          </div>
+                          <textarea
+                            rows={2}
+                            value={q}
+                            onChange={(e) => {
+                              const next = [...editingQuestions];
+                              next[i] = e.target.value;
+                              setEditingQuestions(next);
+                            }}
+                            placeholder={i === 0 ? 'Walk me through how you would design...' : 'Add another question'}
+                            style={{ flex: 1, padding: '10px 14px', border: '1px solid #e1e5dd', borderRadius: 12, fontSize: 15, fontFamily: 'inherit', background: '#fff', resize: 'vertical' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (editingQuestions.length === 1) {
+                                setEditingQuestions(['']);
+                                return;
+                              }
+                              setEditingQuestions(editingQuestions.filter((_, idx) => idx !== i));
+                            }}
+                            style={{ all: 'unset', cursor: 'pointer', padding: '8px 12px', borderRadius: 8, background: '#f3f3f3', fontSize: 14, fontWeight: 600 }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => setEditingQuestions([...editingQuestions, ''])}
+                          style={{ all: 'unset', cursor: 'pointer', padding: '8px 14px', borderRadius: 8, background: '#eef2ed', fontSize: 14, fontWeight: 600 }}
+                        >
+                          + Add question
+                        </button>
+                      </div>
+                    </div>
+                  ) : evalLoading ? (
+                    <div style={{ padding: 16, border: '1px solid #e1e5dd', borderRadius: 10, background: '#fafbf8', color: '#6b7280', fontSize: 14 }}>
+                      Evaluating questions with Gemini…
+                    </div>
+                  ) : evalError ? (
+                    <div style={{ padding: 16, border: '1px solid #f4a8a4', borderRadius: 10, background: '#fde2e1', color: '#8a1f1a', fontSize: 14 }}>
+                      <div style={{ fontWeight: 700, marginBottom: 4 }}>Evaluation failed</div>
+                      <div style={{ fontSize: 13, whiteSpace: 'pre-wrap' }}>{evalError}</div>
+                      <button
+                        type="button"
+                        onClick={runEvaluation}
+                        style={{ all: 'unset', cursor: 'pointer', marginTop: 10, padding: '6px 12px', borderRadius: 8, background: '#fff', border: '1px solid #f4a8a4', color: '#8a1f1a', fontWeight: 600, fontSize: 13 }}
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : evaluation !== null ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ color: '#6b7280', fontSize: 13 }}>
+                        Sorted by suggested severity. Click a question to see AI rewrite suggestions.
+                      </div>
+                      {evaluation.map((item, idx) => {
+                        const c = severityColor[item.finding.severity];
+                        const isOpen = expandedEval === idx;
+                        const sevLabel = item.finding.severity === 'none' ? 'no issues detected' : `${item.finding.severity} severity`;
+                        return (
+                          <div
+                            key={idx}
+                            style={{
+                              background: c.bg,
+                              border: `1px solid ${c.border}`,
+                              borderRadius: 10,
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setExpandedEval(isOpen ? null : idx)}
+                              aria-expanded={isOpen}
+                              style={{ all: 'unset', cursor: 'pointer', display: 'block', width: '100%', padding: '10px 14px' }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontSize: 12, fontWeight: 700, color: c.label, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>
+                                    {sevLabel}
+                                    {item.finding.issues.length > 0 && <span style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0, marginLeft: 8, color: c.label }}>· {item.finding.issues.join(', ')}</span>}
+                                  </div>
+                                  <div style={{ fontSize: 15, color: '#1f2937' }}>{item.text}</div>
+                                </div>
+                                <div style={{ fontSize: 18, color: c.label, lineHeight: 1 }}>{isOpen ? '▾' : '▸'}</div>
+                              </div>
+                            </button>
+                            {isOpen && (
+                              <div style={{ padding: '0 14px 12px 14px', borderTop: `1px solid ${c.border}` }}>
+                                {item.finding.explanations.length > 0 && (
+                                  <>
+                                    <div style={{ fontSize: 13, color: c.label, fontWeight: 600, margin: '10px 0 6px' }}>Why this is biased</div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                                      {item.finding.explanations.map((ex, eIdx) => (
+                                        <div key={eIdx} style={{ fontSize: 13, color: '#1f2937', lineHeight: 1.45 }}>
+                                          {ex}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </>
+                                )}
+                                {item.finding.suggestions.length > 0 ? (
+                                  <>
+                                    <div style={{ fontSize: 13, color: c.label, fontWeight: 600, margin: '4px 0 6px' }}>Suggested non-biased variations · click to use</div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                      {item.finding.suggestions.map((s, sIdx) => (
+                                        <button
+                                          key={sIdx}
+                                          type="button"
+                                          onClick={() => applyVariation(idx, s)}
+                                          style={{
+                                            all: 'unset',
+                                            cursor: 'pointer',
+                                            fontSize: 14,
+                                            color: '#1f2937',
+                                            background: '#fff',
+                                            border: `1px solid ${c.border}`,
+                                            borderRadius: 8,
+                                            padding: '8px 10px',
+                                            display: 'block',
+                                          }}
+                                        >
+                                          <span style={{ color: c.label, fontWeight: 700, marginRight: 6 }}>{sIdx + 1}.</span>
+                                          {s}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div style={{ fontSize: 13, color: '#6b7280', paddingTop: 10 }}>
+                                    No bias patterns flagged for this question.
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {evalDirty && (
+                        <div style={{ fontSize: 13, color: '#7a5b10', background: '#fef6d4', border: '1px solid #f0d77a', padding: '8px 12px', borderRadius: 8 }}>
+                          You have unsaved changes — save before closing.
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 8, borderTop: '1px solid #e6eef6', marginTop: 4 }}>
+                        <button
+                          type="button"
+                          onClick={saveEvaluation}
+                          disabled={!evalDirty}
+                          className={flashing ? 'capy-flash' : undefined}
+                          style={{
+                            all: 'unset',
+                            cursor: evalDirty ? 'pointer' : 'not-allowed',
+                            padding: '10px 18px',
+                            borderRadius: 10,
+                            background: evalDirty ? '#5b8b6f' : '#cbd5d0',
+                            color: '#fff',
+                            fontSize: 14,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {evalDirty ? 'Save changes' : 'No changes to save'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : selected.questionsText ? (
                     <ol style={{ marginTop: 8 }}>
                       {String(selected.questionsText).split('\n').filter(Boolean).map((q: string, idx: number) => (
                         <li key={idx} style={{ marginBottom: 8 }}>{q}</li>
@@ -363,4 +818,15 @@ export default function InterviewerDashboardPage() {
       </div>
     </main>
   );
+}
+
+function formatInterviewTime(iso: string) {
+  const date = new Date(iso);
+  return date.toLocaleString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }

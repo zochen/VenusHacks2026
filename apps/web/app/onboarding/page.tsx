@@ -7,43 +7,66 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import type { CommunicationStyle } from '@quietspace/shared-types';
+import { createBrowserSupabaseClient } from '@quietspace/shared-lib';
 import { BasicInfoForm } from '../../components/onboarding/BasicInfoForm';
 import { BundlePicker } from '../../components/onboarding/BundlePicker';
 import { EMPTY_INFO, derivePreferencesFromFeatures, type ProfileInfo } from '../../components/onboarding/data';
+import { useAuth } from '../../lib/AuthContext';
 
 type Step = 'role' | 'info' | 'style';
 type Role = 'candidate' | 'interviewer' | null;
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [step, setStep] = React.useState<Step>('role');
   const [role, setRole] = React.useState<Role>(null);
   const [info, setInfo] = React.useState<ProfileInfo>(EMPTY_INFO);
 
-  function handleInfoSubmit() {
+  const getSupabase = React.useCallback(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return null;
+    }
+    return createBrowserSupabaseClient({
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    });
+  }, []);
+
+  async function handleInfoSubmit() {
     const profile = {
       fullName: info.fullName.trim(),
       username: info.username.trim(),
       birthdate: info.birthdate,
       location: info.location.trim(),
       avatarDataUrl: info.avatarDataUrl,
-      // optional interviewer fields
-      company: (info as any).company ?? undefined,
-      companyRole: (info as any).companyRole ?? undefined,
     };
+
+    const profileRow = {
+      user_id: user?.id,
+      full_name: info.fullName.trim(),
+      username: info.username.trim(),
+      birthdate: info.birthdate,
+      location: info.location.trim(),
+      avatar_url: info.avatarDataUrl,
+      role: role ?? 'candidate',
+    };
+
+    const supabase = getSupabase();
+    if (user && supabase) {
+      const { error } = await supabase.from('user_profiles').upsert(profileRow, { onConflict: 'user_id' });
+      if (error) {
+        console.warn('Failed to persist user profile to Supabase', error);
+      }
+    }
+
     try {
-      // persist role along with basic profile info
-      localStorage.setItem('capyconnect.role', role ?? 'candidate');
-    } catch {}
-    try {
-      // also set a cookie so server-side middleware can enforce role-based routing
+      // preserve role cookie for server-side routing
       if (typeof document !== 'undefined') {
         document.cookie = `capyconnect.role=${encodeURIComponent(role ?? 'candidate')}; Path=/; SameSite=Lax`;
       }
     } catch {}
-    try {
-      localStorage.setItem('capyconnect.profile', JSON.stringify(profile));
-    } catch {}
+
     // If the user is an interviewer, skip the communication style step and go to interviewer dashboard
     if (role === 'interviewer') {
       try {
@@ -54,15 +77,21 @@ export default function OnboardingPage() {
     setStep('style');
   }
 
-  function handleStyleSave(bundle: CommunicationStyle, features: string[]) {
+  async function handleStyleSave(bundle: CommunicationStyle, features: string[]) {
     const prefs = {
-      communicationStyle: bundle,
+      user_id: user?.id,
+      communication_style: bundle,
       ...derivePreferencesFromFeatures(features),
     };
-    try {
-      localStorage.setItem('capyconnect.preferences', JSON.stringify(prefs));
-      localStorage.setItem('capyconnect.features', JSON.stringify(features));
-    } catch {}
+
+    const supabase = getSupabase();
+    if (user && supabase) {
+      const { error } = await supabase.from('user_preferences').upsert(prefs, { onConflict: 'user_id' });
+      if (error) {
+        console.warn('Failed to persist preferences to Supabase', error);
+      }
+    }
+
     router.push('/candidate/dashboard');
   }
 
