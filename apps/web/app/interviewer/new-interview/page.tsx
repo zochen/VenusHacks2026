@@ -42,6 +42,7 @@ export default function NewInterviewPage() {
         when,
         style: 'default',
         status: 'scheduled',
+        inviteStatus: 'pending',
         questionsText: questions || null,
         attachedFileName: fileName,
         attachedFileDataUrl: filePreview,
