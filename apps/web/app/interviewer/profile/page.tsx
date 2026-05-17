@@ -47,6 +47,33 @@ export default function InterviewerProfilePage() {
     setIsEditing(false);
   }
 
+  // register global save handler for header
+  React.useEffect(() => {
+    if (isEditing) {
+      // expose a global save function that triggers the form submission
+      (window as any).capyProfileSave = () => {
+        const form = document.getElementById('interviewer-profile-form') as HTMLFormElement | null;
+        if (form && typeof form.requestSubmit === 'function') {
+          form.requestSubmit();
+        }
+      };
+      // let header know we're editing
+      window.dispatchEvent(new CustomEvent('capy:profileEditing', { detail: { isEditing: true } }));
+    } else {
+      // cleanup
+      try {
+        if ((window as any).capyProfileSave) delete (window as any).capyProfileSave;
+      } catch {}
+      window.dispatchEvent(new CustomEvent('capy:profileEditing', { detail: { isEditing: false } }));
+    }
+    return () => {
+      try {
+        if ((window as any).capyProfileSave) delete (window as any).capyProfileSave;
+      } catch {}
+      window.dispatchEvent(new CustomEvent('capy:profileEditing', { detail: { isEditing: false } }));
+    };
+  }, [isEditing]);
+
   return (
     <main style={{ maxWidth: 1080, margin: '0 auto', padding: '40px 32px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 24 }}>
@@ -86,7 +113,7 @@ export default function InterviewerProfilePage() {
       </header>
 
       {isEditing ? (
-        <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleSave} mode="edit" savedAt={savedAt} role={'interviewer'} />
+        <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleSave} mode="edit" savedAt={savedAt} role={'interviewer'} formId="interviewer-profile-form" />
       ) : (
         <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
           <div style={{ width: 96, height: 96, borderRadius: '50%', background: info.avatarDataUrl ? `url(${info.avatarDataUrl}) center/cover no-repeat` : '#eef2ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 700 }}>
