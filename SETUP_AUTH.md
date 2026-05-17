@@ -61,14 +61,18 @@ CREATE TABLE public.user_preferences (
   captions_enabled BOOLEAN DEFAULT TRUE,
   comfort_companion_enabled BOOLEAN DEFAULT TRUE,
   font_scale INTEGER DEFAULT 100, -- percentage
+  selected_features TEXT[] DEFAULT ARRAY[]::TEXT[],
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Planned Interviews table
 CREATE TABLE public.planned_interviews (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  candidate_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  candidate_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  candidate_email TEXT,
+  candidate_name TEXT,
   interviewer_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role TEXT,
   scheduled_at TIMESTAMP WITH TIME ZONE NOT NULL,
   status TEXT DEFAULT 'scheduled', -- 'scheduled', 'live', 'completed'
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -109,9 +113,19 @@ CREATE POLICY "Users can insert own preferences" ON public.user_preferences
 
 -- RLS Policies for planned_interviews (can see as candidate or interviewer)
 CREATE POLICY "Users can read their interviews" ON public.planned_interviews
-  FOR SELECT USING (auth.uid() = candidate_id OR auth.uid() = interviewer_id);
+  FOR SELECT USING (
+    auth.uid() = candidate_id
+    OR auth.uid() = interviewer_id
+    OR candidate_email = auth.jwt() ->> 'email'
+  );
+CREATE POLICY "Interviewers can insert their interviews" ON public.planned_interviews
+  FOR INSERT WITH CHECK (auth.uid() = interviewer_id);
 CREATE POLICY "Users can update their interviews" ON public.planned_interviews
-  FOR UPDATE USING (auth.uid() = candidate_id OR auth.uid() = interviewer_id);
+  FOR UPDATE USING (
+    auth.uid() = candidate_id
+    OR auth.uid() = interviewer_id
+    OR candidate_email = auth.jwt() ->> 'email'
+  );
 
 -- RLS Policies for questions (inherit from interview)
 CREATE POLICY "Users can read interview questions" ON public.questions
@@ -119,12 +133,66 @@ CREATE POLICY "Users can read interview questions" ON public.questions
     EXISTS (
       SELECT 1 FROM public.planned_interviews
       WHERE planned_interviews.id = interview_id
-      AND (auth.uid() = planned_interviews.candidate_id OR auth.uid() = planned_interviews.interviewer_id)
+      AND (
+        auth.uid() = planned_interviews.candidate_id
+        OR auth.uid() = planned_interviews.interviewer_id
+        OR planned_interviews.candidate_email = auth.jwt() ->> 'email'
+      )
     )
   );
+CREATE POLICY "Interviewers can insert interview questions" ON public.questions
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.planned_interviews
+      WHERE planned_interviews.id = interview_id
+      AND auth.uid() = planned_interviews.interviewer_id
+    )
+  );
+
 ```
 
 5. Run the query (click "Run" or Ctrl+Enter)
+
+If you already created the tables before `selected_features` was added, run this migration once:
+
+```sql
+ALTER TABLE public.user_preferences
+ADD COLUMN IF NOT EXISTS selected_features TEXT[] DEFAULT ARRAY[]::TEXT[];
+```
+
+If you already created `planned_interviews` before candidate email scheduling was added, run this migration once:
+
+```sql
+ALTER TABLE public.planned_interviews
+ALTER COLUMN candidate_id DROP NOT NULL,
+ADD COLUMN IF NOT EXISTS candidate_email TEXT,
+ADD COLUMN IF NOT EXISTS candidate_name TEXT,
+ADD COLUMN IF NOT EXISTS role TEXT;
+
+CREATE POLICY "Interviewers can insert their interviews" ON public.planned_interviews
+  FOR INSERT WITH CHECK (auth.uid() = interviewer_id);
+
+CREATE POLICY "Interviewers can insert interview questions" ON public.questions
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.planned_interviews
+      WHERE planned_interviews.id = interview_id
+      AND auth.uid() = planned_interviews.interviewer_id
+    )
+  );
+
+CREATE POLICY "Candidates can read emailed interviews" ON public.planned_interviews
+  FOR SELECT USING (candidate_email = auth.jwt() ->> 'email');
+
+CREATE POLICY "Candidates can read emailed interview questions" ON public.questions
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.planned_interviews
+      WHERE planned_interviews.id = interview_id
+      AND planned_interviews.candidate_email = auth.jwt() ->> 'email'
+    )
+  );
+```
 
 ### 5. Configure Email Templates (Optional but Recommended)
 

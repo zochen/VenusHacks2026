@@ -7,6 +7,8 @@
 import * as React from 'react';
 import type { TranscriptEntry, Question } from '@quietspace/shared-types';
 import { Button, Card, LiveTranscript, QuestionDisplay } from '@quietspace/shared-ui';
+import { createBrowserSupabaseClient } from '@quietspace/shared-lib';
+import { useAuth } from '../../../../lib/AuthContext';
 
 const DEMO_QUESTIONS: Question[] = [
   { id: 'q1', prompt: 'Walk me through how you would design a URL shortener like bit.ly. Focus on the data model and read path.' },
@@ -22,9 +24,73 @@ const SCRIPTED_TRANSCRIPT: TranscriptEntry[] = [
 ];
 
 export default function InterviewerInterviewPage({ params }: { params: { id: string } }) {
+  const { user, isLoading } = useAuth();
   const [questionIndex, setQuestionIndex] = React.useState(0);
+  const [questions, setQuestions] = React.useState<Question[]>(DEMO_QUESTIONS);
+  const [candidateName, setCandidateName] = React.useState('Priya Shah');
+  const [communicationStyle, setCommunicationStyle] = React.useState('relaxed');
   const [transcript, setTranscript] = React.useState<TranscriptEntry[]>(SCRIPTED_TRANSCRIPT);
   const [banner, setBanner] = React.useState<string | null>(null);
+
+  const getSupabase = React.useCallback(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return null;
+    }
+    return createBrowserSupabaseClient({
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    });
+  }, []);
+
+  React.useEffect(() => {
+    const load = async () => {
+      if (isLoading || params.id.startsWith('demo-')) {
+        return;
+      }
+
+      const supabase = getSupabase();
+      if (!user || !supabase) {
+        return;
+      }
+
+      const { data: interview, error: interviewError } = await supabase
+        .from('planned_interviews')
+        .select('candidate_email, candidate_name')
+        .eq('id', params.id)
+        .eq('interviewer_id', user.id)
+        .single();
+
+      if (interviewError || !interview) {
+        console.warn('Failed to load planned interview from Supabase', interviewError);
+        return;
+      }
+
+      setCandidateName(interview.candidate_name ?? interview.candidate_email ?? 'Candidate');
+      setCommunicationStyle('default');
+
+      const { data: questionRows, error: questionsError } = await supabase
+        .from('questions')
+        .select('id, prompt, notes, order_number')
+        .eq('interview_id', params.id)
+        .order('order_number', { ascending: true });
+
+      if (questionsError) {
+        console.warn('Failed to load interview questions from Supabase', questionsError);
+        return;
+      }
+
+      if (questionRows?.length) {
+        setQuestions(questionRows.map((question) => ({
+          id: question.id,
+          prompt: question.prompt,
+          notes: question.notes ?? undefined,
+        })));
+        setQuestionIndex(0);
+      }
+    };
+
+    void load();
+  }, [user, isLoading, params.id, getSupabase]);
 
   function appendCandidateLine(text: string) {
     setTranscript((prev) => [
@@ -44,7 +110,7 @@ export default function InterviewerInterviewPage({ params }: { params: { id: str
     window.setTimeout(() => setBanner(null), 5000);
   }
 
-  const question = DEMO_QUESTIONS[questionIndex]!;
+  const question = questions[questionIndex] ?? DEMO_QUESTIONS[0]!;
 
   return (
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
@@ -53,7 +119,7 @@ export default function InterviewerInterviewPage({ params }: { params: { id: str
           <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>
             Interview · {params.id}
           </div>
-          <h1 style={{ margin: '4px 0 0', fontSize: 28 }}>Interviewing Priya Shah</h1>
+          <h1 style={{ margin: '4px 0 0', fontSize: 28 }}>Interviewing {candidateName}</h1>
         </div>
         <span
           style={{
@@ -65,7 +131,7 @@ export default function InterviewerInterviewPage({ params }: { params: { id: str
             fontWeight: 600,
           }}
         >
-          Communication style: relaxed
+          Communication style: {communicationStyle}
         </span>
       </div>
 
@@ -100,15 +166,15 @@ export default function InterviewerInterviewPage({ params }: { params: { id: str
               </Button>
               <Button
                 variant="primary"
-                onClick={() => setQuestionIndex((i) => Math.min(i + 1, DEMO_QUESTIONS.length - 1))}
-                disabled={questionIndex >= DEMO_QUESTIONS.length - 1}
+                onClick={() => setQuestionIndex((i) => Math.min(i + 1, questions.length - 1))}
+                disabled={questionIndex >= questions.length - 1}
               >
                 Next question →
               </Button>
               <Button variant="ghost">🧠 Clarify question with AI</Button>
             </div>
             <div style={{ marginTop: 16, fontSize: 13, color: '#6b7280' }}>
-              Question {questionIndex + 1} of {DEMO_QUESTIONS.length}
+              Question {questionIndex + 1} of {questions.length}
             </div>
           </Card>
           <Card>

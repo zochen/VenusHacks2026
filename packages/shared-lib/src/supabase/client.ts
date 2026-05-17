@@ -31,10 +31,9 @@ export function createServerSupabaseClient(
 ) {
   return createServerClient(config.url, config.anonKey, {
     cookies: {
-      get: (name) => cookieStore.get(name)?.value,
-      set: (name, value, options) => cookieStore.set(name, value, options),
-      delete: (name) => cookieStore.delete(name),
+      get: (name: string) => cookieStore.get(name)?.value,
+      set: (name: string, value: string, options: CookieOptions) => cookieStore.set(name, value, options),
+      delete: (name: string) => cookieStore.delete(name),
     },
   });
 }
-

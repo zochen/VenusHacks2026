@@ -7,21 +7,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { Card } from '@quietspace/shared-ui';
-
-type InviteStatus = 'pending' | 'accepted';
-
-type InterviewItem = {
-  id: string;
-  candidate: string;
-  role: string;
-  when: string;
-  style: string;
-  status: string;
-  questionsText?: string | null;
-  attachedFileDataUrl?: string | null;
-  attachedFileName?: string | null;
-  inviteStatus?: InviteStatus;
-};
+import { createBrowserSupabaseClient } from '@quietspace/shared-lib';
+import { useAuth } from '../../../lib/AuthContext';
 
 const FAKE_INTERVIEWS: InterviewItem[] = [
   {
@@ -60,6 +47,21 @@ type BiasFinding = {
   issues: string[];
   explanations: string[];
   suggestions: string[];
+};
+
+type InviteStatus = 'pending' | 'accepted';
+
+type InterviewItem = {
+  id: string;
+  candidate: string;
+  role: string;
+  when: string;
+  style: string;
+  status: string;
+  questionsText?: string | null;
+  attachedFileDataUrl?: string | null;
+  attachedFileName?: string | null;
+  inviteStatus?: InviteStatus;
 };
 
 const severityRank: Record<BiasSeverity, number> = { high: 3, medium: 2, low: 1, none: 0 };
@@ -156,27 +158,75 @@ function computeTwoWeeksMondayIso() {
 
 export default function InterviewerDashboardPage() {
   const [stored, setStored] = React.useState<InterviewItem[]>([]);
+  const { user, isLoading } = useAuth();
+
+  const getSupabase = React.useCallback(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return null;
+    }
+    return createBrowserSupabaseClient({
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    });
+  }, []);
 
   React.useEffect(() => {
-    try {
-      const raw = localStorage.getItem('capyconnect.interviews');
-      if (raw) {
-        const parsed = JSON.parse(raw) as any[];
-        const mapped = parsed.map((iv) => ({
-          id: iv.id,
-          candidate: iv.candidate ?? iv.email ?? iv.id,
-          role: iv.role ?? '—',
-          when: formatWhen(iv.when ?? iv.whenRaw ?? 'TBD'),
-          style: iv.style ?? 'default',
-          status: iv.status ?? 'scheduled',
-          questionsText: iv.questionsText ?? iv.questions ?? null,
-          attachedFileDataUrl: iv.attachedFileDataUrl ?? null,
-          attachedFileName: iv.attachedFileName ?? null,
-        }));
-        setStored(mapped);
+    const loadLocalInterviews = () => {
+      try {
+        const raw = localStorage.getItem('capyconnect.interviews');
+        if (raw) {
+          const parsed = JSON.parse(raw) as any[];
+          const mapped: InterviewItem[] = parsed.map((iv) => ({
+            id: iv.id,
+            candidate: iv.candidate ?? iv.email ?? iv.id,
+            role: iv.role ?? '—',
+            when: formatWhen(iv.when ?? iv.whenRaw ?? 'TBD'),
+            style: iv.style ?? 'default',
+            status: iv.status ?? 'scheduled',
+            questionsText: iv.questionsText ?? iv.questions ?? null,
+            attachedFileDataUrl: iv.attachedFileDataUrl ?? null,
+            attachedFileName: iv.attachedFileName ?? null,
+            inviteStatus: iv.inviteStatus ?? 'pending',
+          }));
+          setStored(mapped);
+        }
+      } catch {}
+    };
+
+    const load = async () => {
+      if (isLoading) return;
+      const supabase = getSupabase();
+      if (!user || !supabase) {
+        loadLocalInterviews();
+        return;
       }
-    } catch {}
-  }, []);
+      const { data, error } = await supabase
+        .from('planned_interviews')
+        .select('id, candidate_email, candidate_name, role, scheduled_at, status')
+        .eq('interviewer_id', user.id)
+        .order('scheduled_at', { ascending: true });
+      if (error) {
+        console.warn('Failed to load planned interviews from Supabase', error);
+        loadLocalInterviews();
+        return;
+      }
+      setStored((data ?? []).map((iv: any) => ({
+        id: iv.id,
+        candidate: iv.candidate_name ?? iv.candidate_email ?? iv.id,
+        role: iv.role ?? '—',
+        when: iv.scheduled_at ? formatInterviewTime(iv.scheduled_at) : 'TBD',
+        style: 'default',
+        status: iv.status ?? 'scheduled',
+        questionsText: null,
+        attachedFileDataUrl: null,
+        attachedFileName: null,
+        inviteStatus: 'pending',
+      })));
+    };
+
+    void load();
+  }, [user, isLoading, getSupabase]);
+
   const [selected, setSelected] = React.useState<null | any>(null);
   const [inviteStates, setInviteStates] = React.useState<Record<string, InviteStatus>>({});
   const [editingQuestions, setEditingQuestions] = React.useState<string[] | null>(null);
@@ -768,4 +818,15 @@ export default function InterviewerDashboardPage() {
       </div>
     </main>
   );
+}
+
+function formatInterviewTime(iso: string) {
+  const date = new Date(iso);
+  return date.toLocaleString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }

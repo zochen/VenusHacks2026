@@ -92,8 +92,9 @@ export const BUNDLES: {
 
 export function derivePreferencesFromFeatures(features: string[]) {
   return {
-    captionsEnabled: features.some((f) => f.startsWith('captions-')),
-    comfortCompanionEnabled: features.includes('companion'),
-    fontScale: features.includes('text-largest') ? 1.3 : features.includes('text-larger') ? 1.15 : 1,
+    captions_enabled: features.some((f) => f.startsWith('captions-')),
+    comfort_companion_enabled: features.includes('companion'),
+    font_scale: features.includes('text-largest') ? 130 : features.includes('text-larger') ? 115 : 100,
+    selected_features: features,
   };
 }
