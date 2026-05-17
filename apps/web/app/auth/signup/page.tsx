@@ -51,6 +51,27 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
+      // If dev bypass flag is set, create a confirmed user via server endpoint
+      const bypass = process.env.NEXT_PUBLIC_DEV_BYPASS_CONFIRM === 'true';
+      if (bypass) {
+        const res = await fetch('/api/auth/dev-create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const payload = await res.json();
+        if (!res.ok) {
+          setError(payload?.error || 'Failed to create user');
+          setIsLoading(false);
+          return;
+        }
+
+        // Redirect to login after creating confirmed user
+        router.push('/auth/login?success=signup');
+        return;
+      }
+
       const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,

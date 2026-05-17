@@ -17,7 +17,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <header
+        <AuthProvider>
+          <header
           style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -34,11 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <span style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}>CapyConnect</span>
           </Link>
 
-          <nav style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
-            <a href="/download-extension" style={{ fontSize: 14, color: '#123244', textDecoration: 'none' }}>Download extension</a>
-            <Link href="/onboarding" style={{ fontSize: 14, color: '#123244', textDecoration: 'none' }}>Sign up</Link>
-            <Link href="/" style={{ fontSize: 14, color: '#123244', textDecoration: 'none' }}>About</Link>
-          </nav>
+          <HeaderNav />
         </header>
         <style>{`
           .site-logo { width: 96px; height: 96px; object-fit: contain; border-radius: 10px; display: block; }
@@ -46,7 +43,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           @media (max-width: 480px) { .site-logo { width: 48px; height: 48px; } }
           @media (max-width: 420px) { header { padding: 12px 16px; } }
         `}</style>
-        {children}
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
