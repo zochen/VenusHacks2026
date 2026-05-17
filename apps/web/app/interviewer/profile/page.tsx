@@ -92,10 +92,6 @@ export default function InterviewerProfilePage() {
           >
             Edit your profile
           </button>
-          <div>
-            <h1 style={{ margin: '0 0 4px', fontSize: 28 }}>Your profile</h1>
-            <p style={{ color: '#6b7280', margin: 0, fontSize: 14 }}>View and manage your interviewer profile.</p>
-          </div>
         </div>
         <Link
           href="/interviewer/dashboard"
@@ -113,22 +109,9 @@ export default function InterviewerProfilePage() {
       </header>
 
       {isEditing ? (
-        <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleSave} mode="edit" savedAt={savedAt} role={'interviewer'} formId="interviewer-profile-form" />
+        <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleSave} mode="edit" savedAt={savedAt} role={'interviewer'} formId="interviewer-profile-form" title="" subtitle="" />
       ) : (
-        <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-          <div style={{ width: 96, height: 96, borderRadius: '50%', background: info.avatarDataUrl ? `url(${info.avatarDataUrl}) center/cover no-repeat` : '#eef2ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 700 }}>
-            {!info.avatarDataUrl && (info.fullName.trim()[0]?.toUpperCase() ?? '🌿')}
-          </div>
-          <div>
-            <div style={{ fontSize: 20, fontWeight: 700 }}>{info.fullName || '—'}</div>
-            <div style={{ color: '#6b7280' }}>@{info.username || '—'}</div>
-            <div style={{ marginTop: 8, color: '#6b7280' }}>Email: {user?.email ?? '—'}</div>
-            <div style={{ marginTop: 6, color: '#6b7280' }}>Location: {info.location || '—'}</div>
-            <div style={{ marginTop: 6, color: '#6b7280' }}>Birthdate: {info.birthdate || '—'}</div>
-            <div style={{ marginTop: 6, color: '#6b7280' }}>Company: {(info as any).company || '—'}</div>
-            <div style={{ marginTop: 6, color: '#6b7280' }}>Role: {(info as any).companyRole || '—'}</div>
-          </div>
-        </div>
+        <BasicInfoForm info={info} onChange={setInfo} onSubmit={() => {}} mode="edit" savedAt={savedAt} role={'interviewer'} readOnly formId="interviewer-profile-form" title="" subtitle="" />
       )}
     </main>
   );

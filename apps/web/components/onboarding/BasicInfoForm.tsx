@@ -83,7 +83,7 @@ export function BasicInfoForm({
     if (!/^[a-z0-9_]{3,30}$/i.test(info.username.trim())) {
       next.username = '3–30 chars; letters, numbers, underscores only.';
     }
-    if (!isEdit) {
+    if (!isEdit && showPasswordFields !== false) {
       if (info.password.length < 8) next.password = 'At least 8 characters.';
       if (info.confirmPassword !== info.password) next.confirmPassword = 'Passwords do not match.';
     }
@@ -104,15 +104,27 @@ export function BasicInfoForm({
   }
 
   const justSaved = savedAt && Date.now() - savedAt < 4000;
+  const editingActive = mode === 'edit' && !readOnly;
+  const headerAccent = '#caf2f7ff';
+  const cardStyle: React.CSSProperties = {
+    maxWidth: 640,
+    margin: '0 auto',
+    padding: 28,
+    // when actively editing, give the card an outline matching the header
+    ...(editingActive ? { boxShadow: `0 0 0 4px ${headerAccent}` } : {}),
+  };
 
   return (
-  <section style={{ animation: 'capyconnect-panel-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
-      <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <h1 className="capy-title" style={{ fontSize: 32, margin: '0 0 10px' }}>{headerTitle}</h1>
-        <p style={{ color: '#6b7280', fontSize: 16, margin: 0 }}>{headerSubtitle}</p>
-      </div>
+    <section style={{ animation: 'capyconnect-panel-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
+      {/* show header only when explicit title/subtitle provided */}
+      {(title ?? headerTitle) && (subtitle ?? headerSubtitle) ? (
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <h1 className="capy-title" style={{ fontSize: 32, margin: '0 0 10px' }}>{title ?? headerTitle}</h1>
+          <p style={{ color: '#6b7280', fontSize: 16, margin: 0 }}>{subtitle ?? headerSubtitle}</p>
+        </div>
+      ) : null}
 
-      <Card style={{ maxWidth: 640, margin: '0 auto', padding: 28 }}>
+      <Card style={cardStyle}>
         <form id={formId} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Avatar */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>

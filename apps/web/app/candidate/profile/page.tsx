@@ -160,10 +160,6 @@ export default function CandidateProfilePage() {
           >
             Edit your profile
           </button>
-          <div>
-            <h1 style={{ margin: '0 0 4px', fontSize: 28 }}>Your profile</h1>
-            <p style={{ color: '#6b7280', margin: 0, fontSize: 14 }}>View and manage your profile information.</p>
-          </div>
         </div>
         <Link
           href="/candidate/dashboard"
@@ -185,9 +181,9 @@ export default function CandidateProfilePage() {
       <div style={{ marginTop: 24 }}>
         {tab === 'profile' && (
           isEditing ? (
-            <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleProfileSave} mode="edit" savedAt={profileSavedAt} role={role} formId="candidate-profile-form" />
+            <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleProfileSave} mode="edit" savedAt={profileSavedAt} role={role} formId="candidate-profile-form" title="" subtitle="" />
           ) : (
-            <BasicInfoForm info={info} onChange={setInfo} onSubmit={() => {}} mode="edit" savedAt={profileSavedAt} role={role} readOnly formId="candidate-profile-form" />
+            <BasicInfoForm info={info} onChange={setInfo} onSubmit={() => {}} mode="edit" savedAt={profileSavedAt} role={role} readOnly formId="candidate-profile-form" title="" subtitle="" />
           )
         )}
 
