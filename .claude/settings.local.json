@@ -4,7 +4,12 @@
       "Bash(npm run *)",
       "Bash(npm install *)",
       "PowerShell(Get-NetFirewallRule *)",
-      "Bash(curl -v \"https://xzhbozefuygomzejxkvo.supabase.co/\" --max-time 10)"
+      "Bash(curl -v \"https://xzhbozefuygomzejxkvo.supabase.co/\" --max-time 10)",
+      "Bash(node *)",
+      "Bash(grep *)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "Bash(curl -s -X POST \"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyAIGdKv27cP9ZNLbwb01_G8DeFtdynjGS4\" -H \"Content-Type: application/json\" -d '{\"contents\":[{\"parts\":[{\"text\":\"hi\"}]}]}')",
+      "PowerShell(if \\($env:GEMINI_API_KEY\\) { Write-Output \"shell env has GEMINI_API_KEY: $\\($env:GEMINI_API_KEY.Substring\\(0,10\\)\\)...\" } else { Write-Output \"shell env: not set\" }; [System.Environment]::GetEnvironmentVariable\\('GEMINI_API_KEY','User'\\); [System.Environment]::GetEnvironmentVariable\\('GEMINI_API_KEY','Machine'\\))"
     ]
   }
 }

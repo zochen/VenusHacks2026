@@ -13,7 +13,7 @@ export default function NewInterviewPage() {
   const [email, setEmail] = React.useState('');
   const [role, setRole] = React.useState('');
   const [when, setWhen] = React.useState('');
-  const [questions, setQuestions] = React.useState('');
+  const [questionsRaw, setQuestionsRaw] = React.useState('');
   const [fileName, setFileName] = React.useState<string | null>(null);
   const [filePreview, setFilePreview] = React.useState<string | null>(null);
   const fileRef = React.useRef<HTMLInputElement | null>(null);
@@ -22,6 +22,7 @@ export default function NewInterviewPage() {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitted(true);
+    const questions = questionsRaw.split(/\r?\n/).map((q) => q.trim()).filter(Boolean).join('\n');
     // assemble interview object and persist to localStorage
     try {
       const raw = localStorage.getItem('capyconnect.interviews');
@@ -108,17 +109,20 @@ export default function NewInterviewPage() {
             />
           </label>
           <label>
-            <div style={{ marginBottom: 6, fontWeight: 500 }}>Questions (one per line)</div>
+            <div style={{ marginBottom: 6, fontWeight: 500 }}>Questions</div>
+            <div style={{ color: '#6b7280', fontSize: 13, marginBottom: 8 }}>
+              Paste your questions below — one per line. Blank lines are ignored.
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <textarea
-                rows={6}
+                rows={12}
                 required={!filePreview}
-                value={questions}
-                onChange={(e) => setQuestions(e.target.value)}
-                placeholder={'Walk me through how you would design...\nGiven a binary tree...'}
+                value={questionsRaw}
+                onChange={(e) => setQuestionsRaw(e.target.value)}
+                placeholder={'Walk me through how you would design a URL shortener.\n\nDescribe a recent project where you owned a feature end-to-end.'}
                 style={{ ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }}
               />
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 <input
                   ref={fileRef}
                   type="file"
@@ -131,20 +135,17 @@ export default function NewInterviewPage() {
                     if (f.type === 'text/plain' || f.name.endsWith('.txt')) {
                       const reader = new FileReader();
                       reader.onload = () => {
-                        const txt = String(reader.result ?? '');
-                        setQuestions(txt);
+                        setQuestionsRaw(String(reader.result ?? ''));
                         setFilePreview(null);
                       };
                       reader.readAsText(f);
                     } else if (f.type === 'application/pdf' || f.name.endsWith('.pdf')) {
                       const reader = new FileReader();
                       reader.onload = () => {
-                        // store data URL for PDF preview/download
                         setFilePreview(String(reader.result ?? ''));
                       };
                       reader.readAsDataURL(f);
                     } else {
-                      // unsupported; clear
                       setFileName(null);
                       setFilePreview(null);
                     }
