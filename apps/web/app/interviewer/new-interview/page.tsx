@@ -14,11 +14,44 @@ export default function NewInterviewPage() {
   const [role, setRole] = React.useState('');
   const [when, setWhen] = React.useState('');
   const [questions, setQuestions] = React.useState('');
+  const [fileName, setFileName] = React.useState<string | null>(null);
+  const [filePreview, setFilePreview] = React.useState<string | null>(null);
+  const fileRef = React.useRef<HTMLInputElement | null>(null);
   const [submitted, setSubmitted] = React.useState(false);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitted(true);
+    // assemble interview object and persist to localStorage
+    try {
+      const raw = localStorage.getItem('capyconnect.interviews');
+      const existing = raw ? (JSON.parse(raw) as any[]) : [];
+      const id = `iv-${Date.now()}`;
+      const localPart = email ? email.split('@')[0] : '';
+      const candidateName = localPart
+        ? localPart.split(/[._-]/).map((p) => {
+            const s = String(p ?? '');
+            return s.length ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+          }).join(' ')
+        : email;
+      const interview = {
+        id,
+        candidate: candidateName,
+        email,
+        role,
+        when,
+        style: 'default',
+        status: 'scheduled',
+        questionsText: questions || null,
+        attachedFileName: fileName,
+        attachedFileDataUrl: filePreview,
+      };
+      existing.unshift(interview);
+      localStorage.setItem('capyconnect.interviews', JSON.stringify(existing));
+    } catch (err) {
+      // ignore storage errors
+    }
+
     window.setTimeout(() => router.push('/interviewer/dashboard'), 1200);
   }
 
@@ -75,14 +108,53 @@ export default function NewInterviewPage() {
           </label>
           <label>
             <div style={{ marginBottom: 6, fontWeight: 500 }}>Questions (one per line)</div>
-            <textarea
-              rows={6}
-              required
-              value={questions}
-              onChange={(e) => setQuestions(e.target.value)}
-              placeholder={'Walk me through how you would design...\nGiven a binary tree...'}
-              style={{ ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }}
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <textarea
+                rows={6}
+                required={!filePreview}
+                value={questions}
+                onChange={(e) => setQuestions(e.target.value)}
+                placeholder={'Walk me through how you would design...\nGiven a binary tree...'}
+                style={{ ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }}
+              />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".txt,.pdf,text/plain,application/pdf"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    setFileName(f.name);
+                    if (f.type === 'text/plain' || f.name.endsWith('.txt')) {
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        const txt = String(reader.result ?? '');
+                        setQuestions(txt);
+                        setFilePreview(null);
+                      };
+                      reader.readAsText(f);
+                    } else if (f.type === 'application/pdf' || f.name.endsWith('.pdf')) {
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        // store data URL for PDF preview/download
+                        setFilePreview(String(reader.result ?? ''));
+                      };
+                      reader.readAsDataURL(f);
+                    } else {
+                      // unsupported; clear
+                      setFileName(null);
+                      setFilePreview(null);
+                    }
+                  }}
+                />
+                <Button variant="secondary" type="button" onClick={() => fileRef.current?.click()}>
+                  Upload .txt or .pdf
+                </Button>
+                {fileName && <div style={{ color: '#6b7280', fontSize: 13 }}>{fileName}</div>}
+              </div>
+            </div>
           </label>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <Button variant="primary" type="submit" disabled={submitted}>
