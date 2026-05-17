@@ -314,6 +314,46 @@ export default function MarketingPage() {
                               />
                               <p style={{ margin: 0, color: '#345a73', fontSize: 18, lineHeight: 1.6, flex: '1 1 320px', textAlign: 'right' }}>{s.body}</p>
                             </div>
+                          ) : s.title === 'Structured Conversations' ? (
+                            <div style={{ position: 'relative' }}>
+                              <p style={{ margin: 0, color: '#345a73', fontSize: 18, lineHeight: 1.6 }}>{s.body}</p>
+                              <img
+                                src="/3.png"
+                                alt="Friendly capybara illustration"
+                                aria-hidden="true"
+                                style={{
+                                  position: 'absolute',
+                                  right: -300,
+                                  top: -80,
+                                  width: 280,
+                                  maxWidth: '40%',
+                                  background: 'transparent',
+                                  display: 'block',
+                                  pointerEvents: 'none',
+                                  zIndex: 2,
+                                }}
+                              />
+                            </div>
+                          ) : s.title === 'Cognitive Comfort Tools' ? (
+                            <div style={{ position: 'relative' }}>
+                              <p style={{ margin: 0, color: '#345a73', fontSize: 18, lineHeight: 1.6 }}>{s.body}</p>
+                              <img
+                                src="/4.png"
+                                alt="Friendly capybara illustration"
+                                aria-hidden="true"
+                                style={{
+                                  position: 'absolute',
+                                  left: -216,
+                                  top: -80,
+                                  width: 280,
+                                  maxWidth: '40%',
+                                  background: 'transparent',
+                                  display: 'block',
+                                  pointerEvents: 'none',
+                                  zIndex: 2,
+                                }}
+                              />
+                            </div>
                           ) : (
                             <p style={{ margin: 0, color: '#345a73', fontSize: 18, lineHeight: 1.6 }}>{s.body}</p>
                           )}
