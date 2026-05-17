@@ -577,6 +577,7 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
     document.getElementById('quietspace-demo-blur')?.remove();
     document.getElementById('quietspace-demo-blur-btn')?.remove();
     document.querySelectorAll('.quietspace-demo-blur-rect').forEach((el) => el.remove());
+    document.getElementById('quietspace-demo-pause-popup')?.remove();
     (window as any).__capyRelaySocket?.close?.();
     (window as any).__capyRelaySocket = null;
     return;
@@ -647,9 +648,10 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
     <div id="qs-demo-captions" aria-live="polite" style="margin:12px 18px;padding:12px 14px;min-height:64px;background:rgba(20,30,25,.55);color:#fff !important;border-radius:10px;font-size:16px;line-height:1.4;font-family:'Outfit',sans-serif;">Click "Start" and allow microphone access.</div>
     <div style="padding:10px 18px;display:flex;gap:8px;border-top:1px solid rgba(104,197,220,.25);">
       <button id="qs-demo-toggle" style="flex:1;padding:8px 12px;background:#68C5DC;color:#20576C !important;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">🎙 Start</button>
+      ${role === 'candidate' ? `<button id="qs-demo-pause" title="Ask for a thinking pause" style="flex:1;padding:8px 12px;background:#AFF0FF;color:#20576C !important;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">⏸ Thinking pause</button>` : ''}
     </div>
     <div style="padding:10px 18px 14px;display:flex;gap:6px;border-top:1px solid rgba(104,197,220,.25);">
-      <input id="qs-demo-text" type="text" placeholder="Type to test relay…" style="flex:1;padding:8px 12px;border:none;border-radius:10px;font:13px 'Outfit',system-ui,sans-serif;outline:none;background:rgba(20,30,25,.55);color:#fff;" />
+      <input id="qs-demo-text" type="text" placeholder="Type to text caption..." style="flex:1;padding:8px 12px;border:none;border-radius:10px;font:13px 'Outfit',system-ui,sans-serif;outline:none;background:rgba(20,30,25,.55);color:#fff;" />
       <button id="qs-demo-send-cap" title="Send as caption" style="padding:6px 10px;background:#68C5DC;color:#20576C !important;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px;">💬</button>
       <button id="qs-demo-send-q" title="Send as question" style="padding:6px 10px;background:#AFF0FF;color:#20576C !important;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px;">❓</button>
     </div>
@@ -811,6 +813,23 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
   const status = host.querySelector('#qs-demo-status') as HTMLDivElement;
   const captions = host.querySelector('#qs-demo-captions') as HTMLDivElement;
   const toggleBtn = host.querySelector('#qs-demo-toggle') as HTMLButtonElement;
+  const pauseBtn = host.querySelector('#qs-demo-pause') as HTMLButtonElement | null;
+  if (pauseBtn) {
+    let lastSent = 0;
+    pauseBtn.addEventListener('click', () => {
+      const now = Date.now();
+      if (now - lastSent < 1500) return; // debounce double-clicks
+      lastSent = now;
+      send({ type: 'signal', kind: 'pause', label: 'The candidate is asking for a moment to think.' });
+      const original = pauseBtn.textContent;
+      pauseBtn.textContent = '✓ Sent';
+      pauseBtn.disabled = true;
+      window.setTimeout(() => {
+        pauseBtn.textContent = original;
+        pauseBtn.disabled = false;
+      }, 1500);
+    });
+  }
   function setToggleListening(listening: boolean) {
     toggleBtn.textContent = listening ? '■ Stop' : '🎙 Start';
     toggleBtn.style.background = listening ? '#20576C' : '#68C5DC';
@@ -879,7 +898,10 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
       } else if (msg.type === 'interview') {
         renderInterviewState(msg.payload);
       } else if (msg.type === 'signal') {
-        flashSignal(String(msg.kind ?? 'note'), String(msg.label ?? ''));
+        const kind = String(msg.kind ?? 'note');
+        const label = String(msg.label ?? '');
+        if (kind === 'pause' && role === 'interviewer') showPauseRequest(label);
+        else flashSignal(kind, label);
       }
     });
   }
@@ -898,6 +920,26 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
   function renderInterviewState(payload: any) {
     if (!payload?.currentQuestion) return;
     startTopic(String(payload.currentQuestion));
+  }
+
+  function showPauseRequest(_label: string) {
+    document.getElementById('quietspace-demo-pause-popup')?.remove();
+    const modal = document.createElement('div');
+    modal.id = 'quietspace-demo-pause-popup';
+    modal.style.cssText =
+      "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:395px;height:396px;background:rgba(52,116,141,0.7);border-radius:10px;box-shadow:0 16px 40px rgba(20,30,25,.45);font-family:'Outfit',system-ui,sans-serif !important;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;backdrop-filter:blur(8px);cursor:pointer;";
+    modal.title = 'Click to dismiss';
+    modal.innerHTML = `
+      <svg width="123" height="123" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path fill="rgba(255,255,255,0.8)" d="M10 18a8 8 0 1 1 0-16a8 8 0 0 1 0 16Zm0-2a6 6 0 1 0 0-12a6 6 0 0 0 0 12ZM7 7h2v6H7V7Zm4 0h2v6h-2V7Z"/>
+      </svg>
+      <div style="width:264px;font-family:'Outfit',system-ui,sans-serif !important;font-weight:500;font-size:20px;line-height:30px;text-align:center;color:#fff !important;">
+        The candidate would like a moment to pause.
+      </div>
+    `;
+    modal.addEventListener('click', () => modal.remove());
+    document.body.appendChild(modal);
+    window.setTimeout(() => modal.remove(), 10000);
   }
 
   function flashSignal(kind: string, label: string) {
