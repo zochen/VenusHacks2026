@@ -48,8 +48,8 @@ export default function LoginPage() {
         return;
       }
 
-      // Redirect to onboarding or dashboard
-      router.push('/onboarding');
+  // Redirect to dashboard after login
+  router.push('/candidate/dashboard');
     } catch (err) {
       setError('An unexpected error occurred');
       setIsLoading(false);

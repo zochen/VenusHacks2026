@@ -6,6 +6,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useAuth } from '../../../lib/AuthContext';
 import type { CommunicationStyle } from '@quietspace/shared-types';
 import { BasicInfoForm } from '../../../components/onboarding/BasicInfoForm';
 import { BundlePicker } from '../../../components/onboarding/BundlePicker';
@@ -58,6 +59,7 @@ function loadFeatures(): string[] | null {
 }
 
 export default function CandidateProfilePage() {
+  const { user } = useAuth();
   const [tab, setTab] = React.useState<Tab>('profile');
   const [info, setInfo] = React.useState<ProfileInfo>(EMPTY_INFO);
   const [role, setRole] = React.useState<'candidate' | 'interviewer' | null>(null);
@@ -66,6 +68,7 @@ export default function CandidateProfilePage() {
   const [hydrated, setHydrated] = React.useState(false);
   const [initialBundle, setInitialBundle] = React.useState<CommunicationStyle | null>(null);
   const [initialFeatures, setInitialFeatures] = React.useState<string[]>([]);
+  const [isEditing, setIsEditing] = React.useState(false);
 
   React.useEffect(() => {
     setInfo(loadProfile());
@@ -117,11 +120,25 @@ export default function CandidateProfilePage() {
   return (
     <main style={{ maxWidth: 1080, margin: '0 auto', padding: '40px 32px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ margin: '0 0 4px', fontSize: 28 }}>Edit your profile</h1>
-          <p style={{ color: '#6b7280', margin: 0, fontSize: 14 }}>
-            Update your details or rework your communication preferences. Changes save in place.
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: 10,
+              background: '#eef6f8',
+              border: '1px solid #e1e5dd',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            Edit your profile
+          </button>
+          <div>
+            <h1 style={{ margin: '0 0 4px', fontSize: 28 }}>Your profile</h1>
+            <p style={{ color: '#6b7280', margin: 0, fontSize: 14 }}>View and manage your profile information.</p>
+          </div>
         </div>
         <Link
           href="/candidate/dashboard"
@@ -138,18 +155,34 @@ export default function CandidateProfilePage() {
         </Link>
       </header>
 
-  <Tabs tab={tab} onChange={setTab} hidePreferences={role === 'interviewer'} />
+      <Tabs tab={tab} onChange={setTab} hidePreferences={role === 'interviewer'} />
 
       <div style={{ marginTop: 24 }}>
-        {tab === 'profile' && (
-          <BasicInfoForm
-            info={info}
-            onChange={setInfo}
-            onSubmit={handleProfileSave}
-            mode="edit"
-            savedAt={profileSavedAt}
-            role={role}
-          />
+        {isEditing ? (
+          <BasicInfoForm info={info} onChange={setInfo} onSubmit={handleProfileSave} mode="edit" savedAt={profileSavedAt} role={role} />
+        ) : (
+          tab === 'profile' && (
+            <div>
+              <div style={{ display: 'flex', gap: 24, alignItems: 'center', marginBottom: 18 }}>
+                <div style={{ width: 96, height: 96, borderRadius: '50%', background: info.avatarDataUrl ? `url(${info.avatarDataUrl}) center/cover no-repeat` : '#eef2ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 700 }}>
+                  {!info.avatarDataUrl && (info.fullName.trim()[0]?.toUpperCase() ?? '🌿')}
+                </div>
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 700 }}>{info.fullName || '—'}</div>
+                  <div style={{ color: '#6b7280' }}>@{info.username || '—'}</div>
+                  <div style={{ marginTop: 8, color: '#6b7280' }}>Email: {user?.email ?? '—'}</div>
+                  <div style={{ marginTop: 6, color: '#6b7280' }}>Location: {info.location || '—'}</div>
+                  <div style={{ marginTop: 6, color: '#6b7280' }}>Birthdate: {info.birthdate || '—'}</div>
+                  {role === 'interviewer' && (
+                    <>
+                      <div style={{ marginTop: 6, color: '#6b7280' }}>Company: {(info as any).company || '—'}</div>
+                      <div style={{ marginTop: 6, color: '#6b7280' }}>Role: {(info as any).companyRole || '—'}</div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
         )}
 
         {tab === 'preferences' && hydrated && role !== 'interviewer' && (

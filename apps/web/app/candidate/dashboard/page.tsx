@@ -157,19 +157,7 @@ export default function CandidateDashboardPage() {
             {greeting(now)} · {sorted.length} upcoming interview{sorted.length === 1 ? '' : 's'}
           </p>
         </div>
-        <Link
-          href="/candidate/profile"
-          style={{
-            padding: '8px 14px',
-            border: '1px solid #e1e5dd',
-            borderRadius: 12,
-            color: '#2a2d33',
-            fontSize: 14,
-            fontWeight: 500,
-          }}
-        >
-          Edit profile
-        </Link>
+        {/* Profile access is available via the header Profile button */}
       </header>
 
       {/* Next-up banner */}
