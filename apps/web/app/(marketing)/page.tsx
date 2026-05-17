@@ -83,30 +83,78 @@ export default function MarketingPage() {
       }}
     >        {/* Smooth ombre cloud behind the logo; aria-hidden since decorative */}
         <div className="logo-cloud" aria-hidden="true" />
+        <svg
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 900 600"
+          preserveAspectRatio="none"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: -230,
+            transform: 'translateX(-50%)',
+            width: '100vw',
+            height: 620,
+            zIndex: 0,
+            display: 'block',
+          }}
+        >
+          <rect x="0" y="0" width="900" height="600" fill="#88BECC" />
+          <path d="M0 403L129 401L257 411L386 432L514 440L643 349L771 363L900 343L900 601L771 601L643 601L514 601L386 601L257 601L129 601L0 601Z" fill="#ffffff" />
+          <path d="M0 448L129 446L257 407L386 404L514 396L643 428L771 429L900 441L900 601L771 601L643 601L514 601L386 601L257 601L129 601L0 601Z" fill="#e7e7e7" />
+          <path d="M0 424L129 497L257 503L386 415L514 489L643 433L771 423L900 500L900 601L771 601L643 601L514 601L386 601L257 601L129 601L0 601Z" fill="#cfcfcf" />
+          <path d="M0 473L129 519L257 468L386 526L514 530L643 507L771 507L900 467L900 601L771 601L643 601L514 601L386 601L257 601L129 601L0 601Z" fill="#b7b7b7" />
+          <path d="M0 547L129 550L257 526L386 516L514 501L643 524L771 494L900 531L900 601L771 601L643 601L514 601L386 601L257 601L129 601L0 601Z" fill="#a0a0a0" />
+          <path d="M0 555L129 582L257 579L386 565L514 545L643 553L771 550L900 575L900 601L771 601L643 601L514 601L386 601L257 601L129 601L0 601Z" fill="#A3A3A3" />
+        </svg>
         <div
           aria-hidden="true"
           style={{
             position: 'absolute',
             left: '50%',
-            top: -56,
+            top: 390,
+            transform: 'translateX(-50%)',
+            width: '100vw',
+            height: 40,
+            background: '#A3A3A3',
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+        />
+        <svg
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 900 600"
+          preserveAspectRatio="none"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: 430,
             transform: 'translateX(-50%)',
             width: '100vw',
             height: 620,
-            background: 'linear-gradient(180deg, #88BECC 0%, #88BECC 65%, rgba(136,190,204,0) 100%)',
             zIndex: 0,
+            display: 'block',
+            pointerEvents: 'none',
           }}
-        />
+        >
+          <rect x="0" y="0" width="900" height="600" fill="#ffffff" />
+          <path d="M0 164L129 165L257 168L386 168L514 172L643 167L771 171L900 176L900 0L771 0L643 0L514 0L386 0L257 0L129 0L0 0Z" fill="#ffffff" />
+          <path d="M0 131L129 126L257 131L386 133L514 126L643 132L771 126L900 129L900 0L771 0L643 0L514 0L386 0L257 0L129 0L0 0Z" fill="#d7d7d7" />
+          <path d="M0 88L129 93L257 88L386 89L514 88L643 85L771 92L900 86L900 0L771 0L643 0L514 0L386 0L257 0L129 0L0 0Z" fill="#b0b0b0" />
+          <path d="M0 47L129 47L257 44L386 50L514 50L643 52L771 44L900 45L900 0L771 0L643 0L514 0L386 0L257 0L129 0L0 0Z" fill="#A3A3A3" />
+        </svg>
         <img
           className="hero-logo"
           src="/capybara_bath.PNG"
           alt="Capybaras relaxing in a hot spring with a job listing"
-          style={{ position: 'relative', zIndex: 1 }}
+          style={{ position: 'relative', zIndex: 1, marginTop: -40 }}
         />
       </div>
       {/* Hero Section */}
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 480px', gap: 32, alignItems: 'center', marginBottom: 64 }}>
+      <section style={{ display: 'grid', gridTemplateColumns: '1fr 480px', gap: 32, alignItems: 'center', marginBottom: 64, position: 'relative', zIndex: 1 }}>
         <div>
-          <h1 className="capy-title" style={{ fontSize: 48, lineHeight: 1.05, margin: '0 0 20px', fontWeight: 800 }}>
+          <h1 className="capy-title" style={{ fontSize: 48, lineHeight: 1.05, margin: '40px 0 20px', fontWeight: 800 }}>
             Behavioral interviews redesigned for clarity, comfort, and focus.
           </h1>
           <p style={{ fontSize: 18, color: '#56778d', margin: '0 0 18px' }}>
@@ -175,10 +223,10 @@ export default function MarketingPage() {
           lineHeight: 0,
         }}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 180 }}>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 110 }}>
           <path fill="#D8ECF0" fillOpacity="1" d="M0,256L48,234.7C96,213,192,171,288,165.3C384,160,480,192,576,213.3C672,235,768,245,864,229.3C960,213,1056,171,1152,165.3C1248,160,1344,192,1392,208L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
         </svg>
-        <div style={{ background: 'linear-gradient(180deg, #D8ECF0 0%, #D8ECF0 40%, rgba(216,236,240,0) 100%)', height: 420, marginBottom: -420, pointerEvents: 'none' }} />
+        <div style={{ background: 'linear-gradient(180deg, #D8ECF0 0%, #D8ECF0 40%, rgba(216,236,240,0) 100%)', height: 260, marginBottom: -260, pointerEvents: 'none' }} />
       </div>
 
       {/* Why CapyConnect? — alternating flowing sections */}
@@ -195,21 +243,25 @@ export default function MarketingPage() {
 
           return pairs.map((p, pairIdx) => (
             <React.Fragment key={`pair-${pairIdx}`}>
-              <section className="pair" style={{ height: '100vh', overflow: 'visible', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+              <section className="pair" style={{ height: '60vh', overflow: 'visible', position: 'relative', display: 'flex', flexDirection: 'column' }}>
                 <div className="pair-inner" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   {[p.top, p.bottom].map((s, idx) => (
                     <React.Fragment key={s.title}>
                       <div
                         className="panel"
                         style={{
-                          flex: '1 1 50vh',
+                          flex: '1 1 30vh',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          padding: '48px 28px',
+                          padding: '20px 28px',
                           boxSizing: 'border-box',
                           ...(idx === 0
-                            ? { alignItems: 'flex-start', paddingTop: 0 }
+                            ? {
+                                alignItems: 'flex-start',
+                                paddingTop: pairIdx === 0 ? 0 : 60,
+                                justifyContent: 'flex-start',
+                              }
                             : {}),
                           ...(idx === 1
                             ? {
@@ -219,6 +271,8 @@ export default function MarketingPage() {
                                 marginRight: 'calc(50% - 50vw)',
                                 alignItems: 'flex-start',
                                 paddingTop: 24,
+                                justifyContent: 'flex-end',
+                                paddingRight: 'max(28px, calc(50vw - 568px))',
                               }
                             : {}),
                         }}
@@ -239,7 +293,7 @@ export default function MarketingPage() {
                             lineHeight: 0,
                           }}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 120 }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 80 }}>
                             <path fill="#BDD2E4" fillOpacity="1" d="M0,64L60,74.7C120,85,240,107,360,101.3C480,96,600,64,720,48C840,32,960,32,1080,42.7C1200,53,1320,75,1380,85.3L1440,96L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z" />
                           </svg>
                         </div>
@@ -258,10 +312,10 @@ export default function MarketingPage() {
                     lineHeight: 0,
                   }}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 140 }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 90 }}>
                     <path fill="#D8ECF0" fillOpacity="1" d="M0,256L48,234.7C96,213,192,171,288,165.3C384,160,480,192,576,213.3C672,235,768,245,864,229.3C960,213,1056,171,1152,165.3C1248,160,1344,192,1392,208L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
                   </svg>
-                  <div style={{ background: 'linear-gradient(180deg, #D8ECF0 0%, #D8ECF0 40%, rgba(216,236,240,0) 100%)', height: 420, marginBottom: -420, pointerEvents: 'none' }} />
+                  <div style={{ background: 'linear-gradient(180deg, #D8ECF0 0%, #D8ECF0 40%, rgba(216,236,240,0) 100%)', height: 260, marginBottom: -260, pointerEvents: 'none' }} />
                 </div>
               )}
             </React.Fragment>

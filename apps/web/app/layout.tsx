@@ -26,6 +26,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             padding: '16px 32px',
             borderBottom: '1px solid #e6eef6',
             background: '#caf2f7ff',
+            position: 'relative',
+            zIndex: 10,
           }}
         >
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 0, fontWeight: 700, fontSize: 18, color: '#123244', textDecoration: 'none' }}>
