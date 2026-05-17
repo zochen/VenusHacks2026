@@ -14,6 +14,7 @@ export default function NewInterviewPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [email, setEmail] = React.useState('');
+  const [fullName, setFullName] = React.useState('');
   const [role, setRole] = React.useState('');
   const [when, setWhen] = React.useState('');
   const [questionsRaw, setQuestionsRaw] = React.useState('');
@@ -39,13 +40,18 @@ export default function NewInterviewPage() {
     setSubmitted(true);
     const questions = questionsRaw.split(/\r?\n/).map((q) => q.trim()).filter(Boolean).join('\n');
 
-    const localPart = email ? email.split('@')[0] : '';
-    const candidateName = localPart
-      ? localPart.split(/[._-]/).map((p) => {
-          const s = String(p ?? '');
-          return s.length ? s.charAt(0).toUpperCase() + s.slice(1) : '';
-        }).join(' ')
-      : email;
+    // Use the explicitly provided full name when available; otherwise derive from email
+    const candidateName = fullName && String(fullName).trim().length > 0
+      ? String(fullName).trim()
+      : (() => {
+          const localPart = email ? email.split('@')[0] : '';
+          return localPart
+            ? localPart.split(/[._-]/).map((p) => {
+                const s = String(p ?? '');
+                return s.length ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+              }).join(' ')
+            : email;
+        })();
 
     const supabase = getSupabase();
     if (user && supabase) {
@@ -139,6 +145,18 @@ export default function NewInterviewPage() {
 
       <Card>
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <label>
+            <div style={{ marginBottom: 6, fontWeight: 500 }}>Candidate full name</div>
+            <input
+              type="text"
+              required
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Full name (e.g. Priya Shah)"
+              style={inputStyle}
+            />
+          </label>
+
           <label>
             <div style={{ marginBottom: 6, fontWeight: 500 }}>Candidate email</div>
             <input

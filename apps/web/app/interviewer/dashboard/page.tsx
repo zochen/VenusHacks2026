@@ -54,6 +54,7 @@ type InviteStatus = 'pending' | 'accepted';
 type InterviewItem = {
   id: string;
   candidate: string;
+  email?: string | null;
   role: string;
   when: string;
   style: string;
@@ -178,7 +179,8 @@ export default function InterviewerDashboardPage() {
           const parsed = JSON.parse(raw) as any[];
           const mapped: InterviewItem[] = parsed.map((iv) => ({
             id: iv.id,
-            candidate: iv.candidate ?? iv.email ?? iv.id,
+            candidate: iv.candidate ?? iv.name ?? iv.email ?? iv.id,
+            email: iv.email ?? null,
             role: iv.role ?? '—',
             when: formatWhen(iv.when ?? iv.whenRaw ?? 'TBD'),
             style: iv.style ?? 'default',
@@ -236,6 +238,7 @@ export default function InterviewerDashboardPage() {
       setStored((data ?? []).map((iv: any) => ({
         id: iv.id,
         candidate: iv.candidate_name ?? iv.candidate_email ?? iv.id,
+        email: iv.candidate_email ?? null,
         role: iv.role ?? '—',
         when: iv.scheduled_at ? formatInterviewTime(iv.scheduled_at) : 'TBD',
         style: 'default',
@@ -465,7 +468,8 @@ export default function InterviewerDashboardPage() {
         // update local copy too
         setStored(parsed.map((iv) => ({
           id: iv.id,
-          candidate: iv.candidate ?? iv.email ?? iv.id,
+          candidate: iv.candidate ?? iv.name ?? iv.email ?? iv.id,
+          email: iv.email ?? null,
           role: iv.role ?? '—',
           when: formatWhen(iv.when ?? iv.whenRaw ?? 'TBD'),
           style: iv.style ?? 'default',
@@ -588,12 +592,18 @@ export default function InterviewerDashboardPage() {
                   >
                     {candidateInitials || '—'}
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 16 }}>{iv.candidate}</div>
-                    <div style={{ color: '#6b7280', fontSize: 14 }}>
-                      {iv.role} · {iv.when}
-                    </div>
-                  </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                              <div style={{ fontWeight: 600, fontSize: 16 }}>{iv.candidate}</div>
+                              {/* show email in smaller, lighter text when available in the stored object */}
+                              {'email' in iv && iv.email ? (
+                                <div style={{ color: '#6b7280', fontSize: 14 }}>{iv.email}</div>
+                              ) : null}
+                            </div>
+                            <div style={{ color: '#6b7280', fontSize: 14 }}>
+                              {iv.role} · {iv.when}
+                            </div>
+                          </div>
                   <span
                     style={{
                       padding: '4px 12px',
@@ -671,7 +681,10 @@ export default function InterviewerDashboardPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
                   <div>
                     <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Interview · {selected.id}</div>
-                    <div style={{ fontSize: 20, fontWeight: 700 }}>{selected.candidate}</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                      <div style={{ fontSize: 20, fontWeight: 700 }}>{selected.candidate}</div>
+                      {selected.email ? <div style={{ color: '#6b7280', fontSize: 14 }}>{selected.email}</div> : null}
+                    </div>
                     <div style={{ color: '#6b7280', marginTop: 6 }}>{selected.role} · {selected.when}</div>
                   </div>
                   <div>
