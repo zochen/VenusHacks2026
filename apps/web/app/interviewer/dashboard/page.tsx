@@ -2,6 +2,9 @@
 // Surface: web
 // Do not edit without coordinating in group chat.
 
+'use client';
+
+import React from 'react';
 import Link from 'next/link';
 import { Card } from '@quietspace/shared-ui';
 
@@ -47,6 +50,25 @@ const styleColor: Record<string, { bg: string; fg: string }> = {
 };
 
 export default function InterviewerDashboardPage() {
+  const [stored, setStored] = React.useState<Array<{ id: string; candidate: string; role: string; when: string; style: string; status: string }>>([]);
+
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem('capyconnect.interviews');
+      if (raw) {
+        const parsed = JSON.parse(raw) as any[];
+        const mapped = parsed.map((iv) => ({
+          id: iv.id,
+          candidate: iv.candidate ?? iv.email ?? iv.id,
+          role: iv.role ?? '—',
+          when: iv.when ?? 'TBD',
+          style: iv.style ?? 'default',
+          status: iv.status ?? 'scheduled',
+        }));
+        setStored(mapped);
+      }
+    } catch {}
+  }, []);
   return (
     <main style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 32px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
@@ -69,7 +91,7 @@ export default function InterviewerDashboardPage() {
       </div>
 
       <div style={{ display: 'grid', gap: 16 }}>
-        {FAKE_INTERVIEWS.map((iv) => {
+        {(stored ?? []).concat(FAKE_INTERVIEWS).map((iv) => {
           const color = styleColor[iv.style] ?? styleColor.default!;
           return (
             <Link key={iv.id} href={`/interviewer/interview/${iv.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
