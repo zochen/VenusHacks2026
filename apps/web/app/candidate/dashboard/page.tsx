@@ -153,7 +153,7 @@ export default function CandidateDashboardPage() {
         .from('user_profiles')
         .select('full_name, username, birthdate, location, avatar_url')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         console.warn('Failed to load profile from Supabase', error);

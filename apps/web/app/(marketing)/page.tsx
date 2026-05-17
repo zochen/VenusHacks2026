@@ -138,11 +138,12 @@ export default function MarketingPage() {
       <section style={{ display: 'grid', gridTemplateColumns: '1fr 480px', gap: 32, alignItems: 'center', marginBottom: 64, position: 'relative', zIndex: 1 }}>
         <div>
           <h1 className="capy-title" style={{ fontSize: 48, lineHeight: 1.05, margin: '40px 0 20px', fontWeight: 800 }}>
-            Behavioral interviews redesigned for clarity, comfort, and focus.
+            Interviews redesigned for clarity, comfort, and focus.
           </h1>
           <p style={{ fontSize: 18, color: '#56778d', margin: '0 0 18px' }}>
-            Customizable interview experiences that reduce cognitive overload, provide structured communication, and
-            offer live accessibility support.
+            CapyConnect makes interviews work for everyone. Interviewers draft questions with
+            built-in bias checks; candidates set their communication preferences once, and a Chrome
+            extension quietly adapts the video call to match — no diagnosis disclosure required.
           </p>
 
           <p style={{ fontSize: 18, color: '#56778d', margin: '16px 0 24px' }}>

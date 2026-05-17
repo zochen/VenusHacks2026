@@ -8,14 +8,26 @@
     "service_worker": "src/background/index.ts",
     "type": "module"
   },
+  "icons": {
+    "16": "CapyConnect_avatar.png",
+    "32": "CapyConnect_avatar.png",
+    "48": "CapyConnect_avatar.png",
+    "128": "CapyConnect_avatar.png"
+  },
   "action": {
     "default_popup": "src/popup/index.html",
-    "default_title": "CapyConnect"
+    "default_title": "CapyConnect",
+    "default_icon": {
+      "16": "CapyConnect_avatar.png",
+      "32": "CapyConnect_avatar.png",
+      "48": "CapyConnect_avatar.png",
+      "128": "CapyConnect_avatar.png"
+    }
   },
   "options_page": "src/options/index.html",
   "web_accessible_resources": [
     {
-      "resources": ["CapyConnect_avatar.png"],
+      "resources": ["CapyConnect_avatar.png", "capy_connect_capybara.png"],
       "matches": ["<all_urls>"]
     }
   ]

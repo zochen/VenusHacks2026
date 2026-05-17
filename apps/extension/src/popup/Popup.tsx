@@ -32,15 +32,22 @@ export function Popup() {
   const [relayState, setRelayState] = React.useState<'idle' | 'connecting' | 'open' | 'closed' | 'error'>('idle');
   const [sentQuestion, setSentQuestion] = React.useState<string | null>(null);
   const [showMascot, setShowMascot] = React.useState(true);
+  const [dyslexiaFont, setDyslexiaFont] = React.useState(false);
+  const [bwMode, setBwMode] = React.useState(false);
   const wsRef = React.useRef<WebSocket | null>(null);
 
   React.useEffect(() => {
-    chrome.storage?.local?.get(['capyRoom', 'capyRelayUrl', 'capyRole', 'capyShowMascot'], (v) => {
-      if (v.capyRoom) setRoomCode(String(v.capyRoom));
-      if (v.capyRelayUrl) setRelayUrl(String(v.capyRelayUrl));
-      if (v.capyRole === 'interviewer' || v.capyRole === 'candidate') setRole(v.capyRole);
-      if (typeof v.capyShowMascot === 'boolean') setShowMascot(v.capyShowMascot);
-    });
+    chrome.storage?.local?.get(
+      ['capyRoom', 'capyRelayUrl', 'capyRole', 'capyShowMascot', 'capyDyslexiaFont', 'capyBwMode'],
+      (v) => {
+        if (v.capyRoom) setRoomCode(String(v.capyRoom));
+        if (v.capyRelayUrl) setRelayUrl(String(v.capyRelayUrl));
+        if (v.capyRole === 'interviewer' || v.capyRole === 'candidate') setRole(v.capyRole);
+        if (typeof v.capyShowMascot === 'boolean') setShowMascot(v.capyShowMascot);
+        if (typeof v.capyDyslexiaFont === 'boolean') setDyslexiaFont(v.capyDyslexiaFont);
+        if (typeof v.capyBwMode === 'boolean') setBwMode(v.capyBwMode);
+      }
+    );
   }, []);
 
   function saveRole(next: Role) {
@@ -90,6 +97,35 @@ export function Popup() {
   async function toggleMascot(next: boolean) {
     setShowMascot(next);
     chrome.storage?.local?.set({ capyShowMascot: next });
+  }
+
+  function toggleDyslexiaFont(next: boolean) {
+    setDyslexiaFont(next);
+    chrome.storage?.local?.set({ capyDyslexiaFont: next });
+    // Update any live overlay on the active tab.
+    chrome.tabs?.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs[0]?.id;
+      if (!tabId) return;
+      chrome.scripting?.executeScript({
+        target: { tabId },
+        func: applyDyslexiaFont,
+        args: [next],
+      });
+    });
+  }
+
+  function toggleBwMode(next: boolean) {
+    setBwMode(next);
+    chrome.storage?.local?.set({ capyBwMode: next });
+    chrome.tabs?.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs[0]?.id;
+      if (!tabId) return;
+      chrome.scripting?.executeScript({
+        target: { tabId },
+        func: applyBwMode,
+        args: [next],
+      });
+    });
   }
 
   function sendTopic(text: string) {
@@ -156,6 +192,8 @@ export function Popup() {
               presets: role === 'interviewer' ? PRESET_QUESTIONS.map((q) => ({ text: q.text })) : undefined,
               mascotUrl: chrome.runtime?.getURL('CapyConnect_avatar.png'),
               showMascot,
+              dyslexiaFont,
+              bwMode,
             },
           ],
         },
@@ -319,6 +357,68 @@ export function Popup() {
           </div>
         </div>
 
+        {/* Accessibility: dyslexia-friendly font toggle */}
+        <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#eaf6f8', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#2a2d33' }}>
+          <span>🔤 Reading-friendly font</span>
+          <span
+            role="switch"
+            aria-checked={dyslexiaFont}
+            onClick={() => toggleDyslexiaFont(!dyslexiaFont)}
+            style={{
+              position: 'relative',
+              display: 'inline-block',
+              width: 36,
+              height: 20,
+              background: dyslexiaFont ? '#68C5DC' : '#cbd5d6',
+              borderRadius: 999,
+              transition: 'background .15s',
+            }}
+          >
+            <span style={{
+              position: 'absolute',
+              top: 2,
+              left: dyslexiaFont ? 18 : 2,
+              width: 16,
+              height: 16,
+              background: '#fff',
+              borderRadius: '50%',
+              transition: 'left .15s',
+              boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+            }} />
+          </span>
+        </label>
+
+        {/* Accessibility: black & white windows toggle */}
+        <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#eaf6f8', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#2a2d33' }}>
+          <span>◐ Black & white windows</span>
+          <span
+            role="switch"
+            aria-checked={bwMode}
+            onClick={() => toggleBwMode(!bwMode)}
+            style={{
+              position: 'relative',
+              display: 'inline-block',
+              width: 36,
+              height: 20,
+              background: bwMode ? '#68C5DC' : '#cbd5d6',
+              borderRadius: 999,
+              transition: 'background .15s',
+            }}
+          >
+            <span style={{
+              position: 'absolute',
+              top: 2,
+              left: bwMode ? 18 : 2,
+              width: 16,
+              height: 16,
+              background: '#fff',
+              borderRadius: '50%',
+              transition: 'left .15s',
+              boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+            }} />
+          </span>
+        </label>
+
         {/* Interviewer: preset question picker */}
         {role === 'interviewer' && (
           <div
@@ -374,14 +474,14 @@ export function Popup() {
             <div style={{ fontSize: 10, color: '#6b7280' }}>
               Questions appear on the candidate's overlay in real time.
             </div>
-            <div style={{ borderTop: '1px dashed #d6e4f0', paddingTop: 8, marginTop: 4 }}>
+            <div style={{ borderTop: '1px dashed #d6e4f0', paddingTop: 8, marginTop: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <button
                 type="button"
                 onClick={startCaptionDemo}
                 title="Inject mic overlay on this tab so spoken questions auto-forward to the candidate"
                 style={primaryButtonStyle}
               >
-                🎙 Start mic (auto-detect questions)
+                🎙 Start
               </button>
               {demoStatus && (
                 <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'center', marginTop: 6 }}>
@@ -399,42 +499,13 @@ export function Popup() {
               type="button"
               onClick={startCaptionDemo}
               title="Inject a live caption overlay onto the current tab"
-              style={primaryButtonStyle}
+              style={{ ...primaryButtonStyle, alignSelf: 'center' }}
             >
-              🎙 Start caption demo
+              🎙 Start
             </button>
             {demoStatus && (
               <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'center' }}>{demoStatus}</div>
             )}
-            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#eaf6f8', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#2a2d33' }}>
-              <span>🐹 Show Capy mascot</span>
-              <span
-                role="switch"
-                aria-checked={showMascot}
-                onClick={() => toggleMascot(!showMascot)}
-                style={{
-                  position: 'relative',
-                  display: 'inline-block',
-                  width: 36,
-                  height: 20,
-                  background: showMascot ? '#68C5DC' : '#cbd5d6',
-                  borderRadius: 999,
-                  transition: 'background .15s',
-                }}
-              >
-                <span style={{
-                  position: 'absolute',
-                  top: 2,
-                  left: showMascot ? 18 : 2,
-                  width: 16,
-                  height: 16,
-                  background: '#fff',
-                  borderRadius: '50%',
-                  transition: 'left .15s',
-                  boxShadow: '0 1px 3px rgba(0,0,0,.2)',
-                }} />
-              </span>
-            </label>
             <button
               type="button"
               onClick={() => openWeb('/candidate/dashboard')}
@@ -535,7 +606,73 @@ const ghostButtonStyle: React.CSSProperties = {
 export default Popup;
 
 // Runs in the page (via chrome.scripting.executeScript). Must be self-contained.
-function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null; role?: 'interviewer' | 'candidate'; presets?: { text: string }[]; mascotUrl?: string; showMascot?: boolean }) {
+// Apply or remove the OpenDyslexic / Lexend stylesheet + override on the
+// floating overlay panels. Injected via chrome.scripting so it runs in the
+// page context where the panels live. Safe to call multiple times.
+function applyDyslexiaFont(enable: boolean) {
+  const FONT_LINK_ID = 'quietspace-demo-dyslexia-font-link';
+  const FONT_STYLE_ID = 'quietspace-demo-dyslexia-font-style';
+  const existingLink = document.getElementById(FONT_LINK_ID);
+  const existingStyle = document.getElementById(FONT_STYLE_ID);
+  if (!enable) {
+    existingLink?.remove();
+    existingStyle?.remove();
+    return;
+  }
+  if (!existingLink) {
+    const link = document.createElement('link');
+    link.id = FONT_LINK_ID;
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&display=swap';
+    document.head.appendChild(link);
+  }
+  if (!existingStyle) {
+    const style = document.createElement('style');
+    style.id = FONT_STYLE_ID;
+    // Target all CapyConnect overlay surfaces and their descendants so the
+    // captions, questions, toolbar, and any injected buttons all switch font.
+    style.textContent = `
+      #quietspace-demo-overlay,
+      #quietspace-demo-questions,
+      #quietspace-demo-toolbar,
+      [id^="quietspace-demo-restore-"],
+      #quietspace-demo-overlay *,
+      #quietspace-demo-questions *,
+      #quietspace-demo-toolbar *,
+      [id^="quietspace-demo-restore-"] * {
+        font-family: 'Lexend', 'OpenDyslexic', system-ui, sans-serif !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
+// Apply or remove a grayscale CSS filter to the floating overlay panels so the
+// user can read in a desaturated / B&W layout.
+function applyBwMode(enable: boolean) {
+  const STYLE_ID = 'quietspace-demo-bw-mode-style';
+  const existing = document.getElementById(STYLE_ID);
+  if (!enable) {
+    existing?.remove();
+    return;
+  }
+  if (existing) return;
+  const style = document.createElement('style');
+  style.id = STYLE_ID;
+  style.textContent = `
+    #quietspace-demo-overlay,
+    #quietspace-demo-questions,
+    #quietspace-demo-toolbar,
+    #quietspace-demo-blur-btn,
+    #quietspace-demo-mascot,
+    [id^="quietspace-demo-restore-"] {
+      filter: grayscale(1) contrast(1.05) !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null; role?: 'interviewer' | 'candidate'; presets?: { text: string }[]; mascotUrl?: string; showMascot?: boolean; dyslexiaFont?: boolean; bwMode?: boolean }) {
   const HOST_ID = 'quietspace-demo-overlay';
   const QHOST_ID = 'quietspace-demo-questions';
   const existing = document.getElementById(HOST_ID);
@@ -550,8 +687,13 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
     document.getElementById('quietspace-demo-mascot-style')?.remove();
     document.getElementById('quietspace-demo-blur')?.remove();
     document.getElementById('quietspace-demo-blur-btn')?.remove();
+    document.getElementById('quietspace-demo-toolbar')?.remove();
+    document.querySelectorAll('[id^="quietspace-demo-restore-"]').forEach((el) => el.remove());
     document.querySelectorAll('.quietspace-demo-blur-rect').forEach((el) => el.remove());
     document.getElementById('quietspace-demo-pause-popup')?.remove();
+    document.getElementById('quietspace-demo-dyslexia-font-link')?.remove();
+    document.getElementById('quietspace-demo-dyslexia-font-style')?.remove();
+    document.getElementById('quietspace-demo-bw-mode-style')?.remove();
     (window as any).__capyRelaySocket?.close?.();
     (window as any).__capyRelaySocket = null;
     return;
@@ -616,13 +758,12 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
         <div style="font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;letter-spacing:.5px;text-transform:uppercase;color:#cdeefa;">${role === 'interviewer' ? 'Interviewer mic' : 'Captions'}</div>
         <div id="qs-demo-room" style="font-size:10px;color:rgba(255,255,255,.65);margin-top:2px;"></div>
       </div>
-      <button id="qs-demo-close" style="background:transparent;border:none;cursor:pointer;font-size:20px;color:#cdeefa;line-height:1;">×</button>
+      <button id="qs-demo-close" title="Minimize" style="background:transparent;border:none;cursor:pointer;font-size:20px;color:#cdeefa;line-height:1;">–</button>
     </div>
     <div id="qs-demo-status" style="display:none;"></div>
     <div id="qs-demo-captions" aria-live="polite" style="margin:12px 18px;padding:12px 14px;min-height:64px;background:rgba(20,30,25,.55);color:#fff !important;border-radius:10px;font-size:16px;line-height:1.4;font-family:'Outfit',sans-serif;">Click "Start" and allow microphone access.</div>
     <div style="padding:10px 18px;display:flex;gap:8px;border-top:1px solid rgba(104,197,220,.25);">
       <button id="qs-demo-toggle" style="flex:1;padding:8px 12px;background:#68C5DC;color:#20576C !important;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">🎙 Start</button>
-      ${role === 'candidate' ? `<button id="qs-demo-pause" title="Ask for a thinking pause" style="flex:1;padding:8px 12px;background:#AFF0FF;color:#20576C !important;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">⏸ Thinking pause</button>` : ''}
     </div>
     <div style="padding:10px 18px 14px;display:flex;gap:6px;border-top:1px solid rgba(104,197,220,.25);">
       <input id="qs-demo-text" type="text" placeholder="Type to text caption..." style="flex:1;padding:8px 12px;border:none;border-radius:10px;font:13px 'Outfit',system-ui,sans-serif;outline:none;background:rgba(20,30,25,.55);color:#fff;" />
@@ -643,27 +784,106 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
     document.head.appendChild(s);
   }
 
+  // Floating toolbar — both roles get one. Candidate also gets pause + mascot
+  // toggle; interviewer's toolbar just holds the blur tool.
+  let toolbar: HTMLDivElement | null = null;
+  if (role === 'candidate' || role === 'interviewer') {
+    document.getElementById('quietspace-demo-toolbar')?.remove();
+    toolbar = document.createElement('div');
+    toolbar.id = 'quietspace-demo-toolbar';
+    toolbar.style.cssText =
+      "position:fixed;left:20px;bottom:20px;display:flex;gap:8px;padding:10px;background:rgba(32,87,108,0.92);border:3px solid #68C5DC;border-radius:10px;box-shadow:0 8px 20px rgba(20,30,25,.25);z-index:2147483647;backdrop-filter:blur(6px);font-family:'Outfit',system-ui,sans-serif;align-items:center;";
+
+    const dragHandle = document.createElement('div');
+    dragHandle.id = 'qs-demo-toolbar-handle';
+    dragHandle.title = 'Drag to move toolbar';
+    dragHandle.textContent = '⋮⋮';
+    dragHandle.style.cssText =
+      "padding:0 6px;color:#cdeefa;font-size:14px;font-weight:700;letter-spacing:-1px;line-height:1;cursor:move;user-select:none;";
+    toolbar.appendChild(dragHandle);
+
+    const toolbarMinBtn = document.createElement('button');
+    toolbarMinBtn.id = 'qs-demo-toolbar-min';
+    toolbarMinBtn.type = 'button';
+    toolbarMinBtn.title = 'Minimize';
+    toolbarMinBtn.textContent = '–';
+    toolbarMinBtn.style.cssText =
+      "background:transparent;border:none;cursor:pointer;font-size:18px;color:#cdeefa;line-height:1;padding:0 4px;";
+    toolbar.appendChild(toolbarMinBtn);
+
+    if (role === 'candidate') {
+      const pauseToolBtn = document.createElement('button');
+      pauseToolBtn.id = 'qs-demo-pause';
+      pauseToolBtn.type = 'button';
+      pauseToolBtn.title = 'Ask for a thinking pause';
+      pauseToolBtn.textContent = '⏸ Thinking pause';
+      pauseToolBtn.style.cssText =
+        "padding:8px 12px;background:#68C5DC;color:#20576C;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;font-size:13px;white-space:nowrap;";
+      toolbar.appendChild(pauseToolBtn);
+    }
+
+    document.body.appendChild(toolbar);
+    makeDraggable(toolbar, dragHandle);
+  }
+
   // Eye button — toggle "draw a blur rectangle" mode.
   const blurBtn = document.createElement('button');
   blurBtn.id = 'quietspace-demo-blur-btn';
   blurBtn.type = 'button';
   blurBtn.title = 'Drag on the page to blur an area';
-  blurBtn.style.cssText =
-    'position:fixed;right:380px;bottom:20px;width:89px;height:89px;background:#AFF0FF;border:none;border-radius:100px;box-shadow:0 8px 20px rgba(20,30,25,.18);cursor:pointer;z-index:2147483647;transition:transform .15s ease-out, background .2s;padding:0;';
+  const blurInToolbar = !!toolbar;
+  blurBtn.style.cssText = blurInToolbar
+    ? "padding:6px 10px;background:#68C5DC;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;transition:background .2s, transform .15s ease-out;display:flex;align-items:center;justify-content:center;"
+    : 'position:fixed;right:380px;bottom:20px;width:89px;height:89px;background:#AFF0FF;border:none;border-radius:100px;box-shadow:0 8px 20px rgba(20,30,25,.18);cursor:pointer;z-index:2147483647;transition:transform .15s ease-out, background .2s;padding:0;';
+  const EYE_SIZE = blurInToolbar ? 22 : 54;
   const EYE_WRAP = (inner: string) =>
-    `<span style="position:absolute;width:54px;height:54px;left:calc(50% - 27px);top:calc(50% - 27px);display:block;">${inner}</span>`;
+    `<span style="position:relative;width:${EYE_SIZE}px;height:${EYE_SIZE}px;display:block;">${inner}</span>`;
+  // Monochrome line-art eyes (lucide-style). Single stroke color = monochrome.
   const EYE_OPEN_SVG = EYE_WRAP(`
-    <svg width="54" height="54" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path fill="#34748D" d="M12 9a3 3 0 0 1 3 3a3 3 0 0 1-3 3a3 3 0 0 1-3-3a3 3 0 0 1 3-3m0-4.5c5 0 9.27 3.11 11 7.5c-1.73 4.39-6 7.5-11 7.5S2.73 16.39 1 12c1.73-4.39 6-7.5 11-7.5Z"/>
+    <svg width="${EYE_SIZE}" height="${EYE_SIZE}" viewBox="0 0 24 24" fill="none" stroke="#20576C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+      <circle cx="12" cy="12" r="3"/>
     </svg>
   `);
   const EYE_CLOSED_SVG = EYE_WRAP(`
-    <svg width="54" height="54" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path fill="#34748D" d="M11.83 9L15 12.16V12a3 3 0 0 0-3-3h-.17m-4.3.8l1.55 1.55c-.05.21-.08.42-.08.65a3 3 0 0 0 3 3c.22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53a5 5 0 0 1-5-5c0-.79.2-1.53.53-2.2M2 4.27l2.28 2.28l.45.45C3.08 8.3 1.78 10 1 12c1.73 4.39 6 7.5 11 7.5c1.55 0 3.03-.3 4.38-.84l.43.42L19.73 22L21 20.73L3.27 3M12 7a5 5 0 0 1 5 5c0 .64-.13 1.26-.36 1.82l2.93 2.93c1.5-1.25 2.7-2.89 3.43-4.75c-1.73-4.39-6-7.5-11-7.5c-1.4 0-2.74.25-4 .7l2.17 2.15C10.74 7.13 11.35 7 12 7Z"/>
+    <svg width="${EYE_SIZE}" height="${EYE_SIZE}" viewBox="0 0 24 24" fill="none" stroke="#20576C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+      <line x1="2" x2="22" y1="2" y2="22"/>
     </svg>
   `);
   blurBtn.innerHTML = EYE_CLOSED_SVG;
-  document.body.appendChild(blurBtn);
+  if (blurInToolbar && toolbar) {
+    toolbar.appendChild(blurBtn);
+
+    if (role === 'candidate') {
+      const mascotToggleBtn = document.createElement('button');
+      mascotToggleBtn.id = 'qs-demo-mascot-toggle';
+      mascotToggleBtn.type = 'button';
+      mascotToggleBtn.title = 'Show / hide Capy companion';
+      mascotToggleBtn.textContent = '🐹 Capy';
+      mascotToggleBtn.style.cssText =
+        "padding:8px 12px;background:#68C5DC;color:#20576C;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;font-size:13px;white-space:nowrap;";
+      let mascotVisible = opts?.showMascot !== false;
+      const applyMascotState = () => {
+        const mascotEl = document.getElementById('quietspace-demo-mascot') as HTMLDivElement | null;
+        if (mascotEl) mascotEl.style.display = mascotVisible ? 'flex' : 'none';
+        mascotToggleBtn.style.background = mascotVisible ? '#68C5DC' : '#34748D';
+        mascotToggleBtn.style.color = mascotVisible ? '#20576C' : '#AFF0FF';
+      };
+      mascotToggleBtn.addEventListener('click', () => {
+        mascotVisible = !mascotVisible;
+        try { chrome.storage?.local?.set({ capyShowMascot: mascotVisible }); } catch {}
+        applyMascotState();
+      });
+      toolbar.appendChild(mascotToggleBtn);
+      // Sync once after mascot has been appended later in this function.
+      window.setTimeout(applyMascotState, 0);
+    }
+  } else {
+    document.body.appendChild(blurBtn);
+  }
 
   // Full-page capture overlay shown only while in draw-blur mode.
   const drawOverlay = document.createElement('div');
@@ -682,10 +902,11 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
   let startX = 0, startY = 0;
 
   function setBtnActive(active: boolean) {
-    blurBtn.style.background = active ? '#34748D' : '#AFF0FF';
+    const idle = blurInToolbar ? '#68C5DC' : '#AFF0FF';
+    blurBtn.style.background = active ? '#34748D' : idle;
     blurBtn.innerHTML = active ? EYE_OPEN_SVG : EYE_CLOSED_SVG;
-    const p = blurBtn.querySelector('path');
-    if (p) p.setAttribute('fill', active ? '#AFF0FF' : '#34748D');
+    const svg = blurBtn.querySelector('svg');
+    if (svg) svg.setAttribute('stroke', active ? '#AFF0FF' : '#20576C');
   }
   function enterDrawMode() {
     drawMode = true;
@@ -759,6 +980,54 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
     document.head.appendChild(link);
   }
 
+  // Dyslexia-friendly font override (Lexend from Google Fonts). Toggled by the
+  // popup's "Dyslexia-friendly font" switch.
+  const DYS_LINK_ID = 'quietspace-demo-dyslexia-font-link';
+  const DYS_STYLE_ID = 'quietspace-demo-dyslexia-font-style';
+  document.getElementById(DYS_LINK_ID)?.remove();
+  document.getElementById(DYS_STYLE_ID)?.remove();
+  if (opts?.dyslexiaFont) {
+    const dysLink = document.createElement('link');
+    dysLink.id = DYS_LINK_ID;
+    dysLink.rel = 'stylesheet';
+    dysLink.href = 'https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&display=swap';
+    document.head.appendChild(dysLink);
+    const dysStyle = document.createElement('style');
+    dysStyle.id = DYS_STYLE_ID;
+    dysStyle.textContent = `
+      #quietspace-demo-overlay,
+      #quietspace-demo-questions,
+      #quietspace-demo-toolbar,
+      [id^="quietspace-demo-restore-"],
+      #quietspace-demo-overlay *,
+      #quietspace-demo-questions *,
+      #quietspace-demo-toolbar *,
+      [id^="quietspace-demo-restore-"] * {
+        font-family: 'Lexend', 'OpenDyslexic', system-ui, sans-serif !important;
+      }
+    `;
+    document.head.appendChild(dysStyle);
+  }
+
+  // Black & white windows: desaturate every overlay surface via filter.
+  const BW_STYLE_ID = 'quietspace-demo-bw-mode-style';
+  document.getElementById(BW_STYLE_ID)?.remove();
+  if (opts?.bwMode) {
+    const bwStyle = document.createElement('style');
+    bwStyle.id = BW_STYLE_ID;
+    bwStyle.textContent = `
+      #quietspace-demo-overlay,
+      #quietspace-demo-questions,
+      #quietspace-demo-toolbar,
+      #quietspace-demo-blur-btn,
+      #quietspace-demo-mascot,
+      [id^="quietspace-demo-restore-"] {
+        filter: grayscale(1) contrast(1.05) !important;
+      }
+    `;
+    document.head.appendChild(bwStyle);
+  }
+
   // Separate top-right panel for detected questions.
   const qHost = document.createElement('div');
   qHost.id = QHOST_ID;
@@ -773,7 +1042,7 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
       <div style="display:flex;align-items:center;gap:10px;">
         <span style="font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;letter-spacing:.5px;text-transform:uppercase;color:#cdeefa;">${panelTitle}</span>
       </div>
-      <button id="qs-demo-qclose" style="background:transparent;border:none;cursor:pointer;font-size:20px;color:#cdeefa;line-height:1;">×</button>
+      <button id="qs-demo-qclose" title="Minimize" style="background:transparent;border:none;cursor:pointer;font-size:20px;color:#cdeefa;line-height:1;">–</button>
     </div>
     <div id="qs-demo-topics" style="margin:0;padding:16px 22px 22px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;flex:1;">
       <div id="qs-demo-qempty" style="color:rgba(255,255,255,.7);font-style:italic;font-size:14px;font-family:'Outfit',sans-serif;">${panelHint}</div>
@@ -787,7 +1056,7 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
   const status = host.querySelector('#qs-demo-status') as HTMLDivElement;
   const captions = host.querySelector('#qs-demo-captions') as HTMLDivElement;
   const toggleBtn = host.querySelector('#qs-demo-toggle') as HTMLButtonElement;
-  const pauseBtn = host.querySelector('#qs-demo-pause') as HTMLButtonElement | null;
+  const pauseBtn = document.querySelector('#qs-demo-pause') as HTMLButtonElement | null;
   if (pauseBtn) {
     let lastSent = 0;
     pauseBtn.addEventListener('click', () => {
@@ -1196,14 +1465,58 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
     if (rec) stop();
     else start();
   });
-  closeBtn.addEventListener('click', () => {
-    stop();
-    host.remove();
-    qHost.remove();
-    try { ws?.close(); } catch {}
-    (window as any).__capyRelaySocket = null;
-  });
-  qClose.addEventListener('click', () => qHost.remove());
+  // Minimize behavior: hide the panel and replace it with a small vertical
+  // tab docked to the screen edge. Clicking the tab restores the panel.
+  function makeMinimizable(
+    panel: HTMLElement,
+    btn: HTMLButtonElement,
+    label: string,
+    anchorY: 'top' | 'bottom',
+    side: 'left' | 'right' = 'right',
+    restoreDisplay: string = 'flex'
+  ) {
+    const tabId = `quietspace-demo-restore-${panel.id}`;
+    let tab: HTMLDivElement | null = null;
+    const restore = () => {
+      panel.style.display = restoreDisplay;
+      const existingTab = document.getElementById(tabId);
+      if (existingTab) existingTab.remove();
+      tab = null;
+    };
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Defensive: remove any leftover tab for this panel before docking again.
+      document.getElementById(tabId)?.remove();
+      panel.style.display = 'none';
+      tab = document.createElement('div');
+      tab.id = tabId;
+      tab.title = `Restore ${label}`;
+      tab.textContent = label;
+      // Right-edge tab: rotate 180° so the bottom of the text faces the right
+      // edge of the screen (more natural to read on the right side). The
+      // rotation visually swaps left/right corners and borders, so we set the
+      // radii / missing border on the side opposite to where they appear.
+      const radii = side === 'right'
+        ? 'border-top-right-radius:10px;border-bottom-right-radius:10px;border-left:none;'
+        : 'border-top-right-radius:10px;border-bottom-right-radius:10px;border-left:none;';
+      const shadow = side === 'right'
+        ? 'box-shadow:-4px 4px 12px rgba(20,30,25,.18);'
+        : 'box-shadow:4px 4px 12px rgba(20,30,25,.18);';
+      const transform = side === 'right' ? 'transform:rotate(180deg);' : '';
+      tab.style.cssText =
+        `position:fixed;${side}:0;${anchorY === 'top' ? 'top:80px;' : 'bottom:80px;'}padding:10px 8px;background:rgba(32,87,108,0.92);border:2px solid #68C5DC;${radii}${shadow}color:#cdeefa;font-family:'Outfit',system-ui,sans-serif;font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;z-index:2147483647;writing-mode:vertical-rl;${transform}user-select:none;backdrop-filter:blur(6px);`;
+      tab.addEventListener('click', restore);
+      document.body.appendChild(tab);
+    });
+  }
+  makeMinimizable(host, closeBtn, role === 'interviewer' ? 'Interviewer mic' : 'Captions', 'bottom', 'right');
+  makeMinimizable(qHost, qClose, role === 'interviewer' ? 'Question board' : 'Questions', 'top', 'right');
+  if (toolbar) {
+    const toolbarMinBtn = toolbar.querySelector('#qs-demo-toolbar-min') as HTMLButtonElement | null;
+    if (toolbarMinBtn) {
+      makeMinimizable(toolbar, toolbarMinBtn, 'Tools', 'bottom', 'left', 'flex');
+    }
+  }
 
   const textInput = host.querySelector('#qs-demo-text') as HTMLInputElement;
   const sendCapBtn = host.querySelector('#qs-demo-send-cap') as HTMLButtonElement;
@@ -1260,7 +1573,7 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
     mascot.title = 'Drag to move · toggle from the extension popup';
     const visible = opts?.showMascot !== false;
     mascot.style.cssText =
-      `position:fixed;left:24px;bottom:24px;width:180px;height:180px;background:transparent;cursor:move;z-index:2147483647;user-select:none;display:${visible ? 'flex' : 'none'};align-items:center;justify-content:center;`;
+      `position:fixed;left:24px;bottom:110px;width:180px;height:180px;background:transparent;cursor:move;z-index:2147483647;user-select:none;display:${visible ? 'flex' : 'none'};align-items:center;justify-content:center;`;
     mascot.innerHTML = `
       <div class="qs-mascot-inner">
         <img id="qs-demo-mascot-img" src="${mascotUrl}" alt="Capy" style="position:relative;width:100%;height:100%;object-fit:contain;pointer-events:none;display:block;" />

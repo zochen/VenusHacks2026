@@ -34,7 +34,7 @@ export function HeaderNav() {
         .from('user_profiles')
         .select('role')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (!error && (data?.role === 'candidate' || data?.role === 'interviewer')) {
         setRole(data.role);

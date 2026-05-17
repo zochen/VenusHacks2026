@@ -25,7 +25,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             justifyContent: 'space-between',
             alignItems: 'center',
             padding: '16px 32px',
-            borderBottom: '1px solid #BDD2E4',
             background: '#caf2f7ff',
             position: 'relative',
             zIndex: 10,
