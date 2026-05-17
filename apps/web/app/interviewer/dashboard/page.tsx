@@ -10,36 +10,6 @@ import { Card } from '@quietspace/shared-ui';
 import { createBrowserSupabaseClient } from '@quietspace/shared-lib';
 import { useAuth } from '../../../lib/AuthContext';
 
-const FAKE_INTERVIEWS: InterviewItem[] = [
-  {
-    id: 'demo-priya',
-    candidate: 'Priya Shah',
-    role: 'Frontend Engineer',
-    when: 'Today · 2:00 PM',
-    style: 'relaxed',
-    status: 'scheduled',
-    inviteStatus: 'pending',
-  },
-  {
-    id: 'demo-jordan',
-    candidate: 'Jordan Lee',
-    role: 'Backend Engineer',
-    when: 'Tomorrow · 10:30 AM',
-    style: 'focus',
-    status: 'scheduled',
-    inviteStatus: 'accepted',
-  },
-  {
-    id: 'demo-mira',
-    candidate: 'Mira Okonkwo',
-    role: 'ML Engineer',
-    when: 'Friday · 4:00 PM',
-    style: 'default',
-    status: 'scheduled',
-    inviteStatus: 'pending',
-  },
-];
-
 type BiasSeverity = 'high' | 'medium' | 'low' | 'none';
 
 type BiasFinding = {
@@ -202,7 +172,7 @@ export default function InterviewerDashboardPage() {
         loadLocalInterviews();
         return;
       }
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('planned_interviews')
         .select('id, candidate_email, candidate_name, role, scheduled_at, status')
         .eq('interviewer_id', user.id)
@@ -211,6 +181,25 @@ export default function InterviewerDashboardPage() {
         console.warn('Failed to load planned interviews from Supabase', error);
         loadLocalInterviews();
         return;
+      }
+
+      // First-visit seeding: if this user has never had interviews seeded and
+      // currently has none, generate 3 random demo interviews so the dashboard
+      // isn't empty. Gate by a per-user flag so deletes aren't undone.
+      const seedFlagKey = `capyconnect.seeded.${user.id}`;
+      const alreadySeeded = (() => {
+        try { return localStorage.getItem(seedFlagKey) === '1'; } catch { return false; }
+      })();
+      if (!alreadySeeded && (data ?? []).length === 0) {
+        try {
+          const seeded = await seedDemoInterviews(supabase, user.id);
+          if (seeded && seeded.length > 0) {
+            data = seeded;
+          }
+          try { localStorage.setItem(seedFlagKey, '1'); } catch {}
+        } catch (e) {
+          console.warn('Failed to seed demo interviews', e);
+        }
       }
 
       const interviewIds = (data ?? []).map((iv: any) => iv.id);
@@ -448,9 +437,6 @@ export default function InterviewerDashboardPage() {
     (stored ?? []).forEach((s) => {
       map[s.id] = (s as any).inviteStatus ?? 'pending';
     });
-    FAKE_INTERVIEWS.forEach((f) => {
-      map[f.id] = (f as any).inviteStatus ?? 'pending';
-    });
     setInviteStates(map);
   }, [stored]);
 
@@ -551,7 +537,7 @@ export default function InterviewerDashboardPage() {
       </header>
 
       <div style={{ display: 'grid', gap: 16 }}>
-        {(stored ?? []).concat(FAKE_INTERVIEWS).map((iv) => {
+        {(stored ?? []).map((iv) => {
           const color = styleColor[iv.style] ?? styleColor.default!;
           const candidateInitials = (iv.candidate || '').split(' ').map((p: string) => p[0] ?? '').join('').toUpperCase();
           // compute demo Sam date substitution
@@ -987,6 +973,127 @@ export default function InterviewerDashboardPage() {
       </div>
     </main>
     </>
+  );
+}
+
+const DEMO_FIRST_NAMES = [
+  'Avery', 'Jordan', 'Sasha', 'Riley', 'Cameron', 'Morgan', 'Quinn', 'Hayden',
+  'Priya', 'Rohan', 'Mei', 'Kenji', 'Aisha', 'Diego', 'Lena', 'Noor',
+  'Tomas', 'Elena', 'Yusuf', 'Anika', 'Felix', 'Imani', 'Oscar', 'Zara',
+];
+const DEMO_LAST_NAMES = [
+  'Nguyen', 'Patel', 'Garcia', 'Kim', 'Okafor', 'Silva', 'Cohen', 'Rossi',
+  'Müller', 'Hansen', 'Khan', 'Tanaka', 'Andersen', 'Park', 'Carter', 'Mendes',
+  'Ivanov', 'Singh', 'Reyes', 'Bauer',
+];
+const DEMO_ROLES = [
+  'Frontend Engineer', 'Backend Engineer', 'Full-Stack Engineer',
+  'ML Engineer', 'Data Engineer', 'iOS Engineer', 'Android Engineer',
+  'DevOps Engineer', 'Site Reliability Engineer', 'Product Designer',
+];
+const DEMO_QUESTION_BANK: string[][] = [
+  [
+    'Walk me through how you would design a URL shortener that scales to a billion links.',
+    'Tell me about a time you had to debug a particularly tricky production issue. What was your process?',
+    'How do you decide when to use a relational vs. a non-relational database?',
+    'Describe a project you owned end-to-end. What trade-offs did you make?',
+  ],
+  [
+    'Explain how you would build a real-time chat system. What protocols and storage would you use?',
+    'How do you approach writing tests for code you did not write yourself?',
+    'Walk me through a recent code review where you pushed back on a teammate, and how it went.',
+    'What does "good API design" mean to you? Give a concrete example.',
+  ],
+  [
+    'Design a rate limiter for a public API. How would you handle bursts and abuse?',
+    'How would you migrate a large table to a new schema with zero downtime?',
+    'Tell me about a time you simplified an over-engineered system.',
+    'What is your debugging strategy when logs and metrics both look healthy but users report issues?',
+  ],
+  [
+    'How would you structure a recommendation feed for a content platform with millions of users?',
+    'Describe a time you disagreed with a technical decision. What did you do?',
+    'Walk through how a browser renders a page, from URL to pixels.',
+    'How do you keep code maintainable on a team that ships quickly?',
+  ],
+];
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)]!;
+}
+
+function randomDemoName(used: Set<string>) {
+  for (let i = 0; i < 20; i++) {
+    const name = `${pickRandom(DEMO_FIRST_NAMES)} ${pickRandom(DEMO_LAST_NAMES)}`;
+    if (!used.has(name)) {
+      used.add(name);
+      return name;
+    }
+  }
+  const fallback = `${pickRandom(DEMO_FIRST_NAMES)} ${pickRandom(DEMO_LAST_NAMES)}-${Math.floor(Math.random() * 99)}`;
+  used.add(fallback);
+  return fallback;
+}
+
+function emailFromName(name: string) {
+  const slug = name.toLowerCase().replace(/[^a-z]+/g, '.').replace(/^\.|\.$/g, '');
+  return `${slug}@example.com`;
+}
+
+function randomFutureDateIso(daysAhead: number) {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysAhead);
+  const hour = 9 + Math.floor(Math.random() * 8); // 9am–4pm
+  const minute = Math.random() < 0.5 ? 0 : 30;
+  d.setHours(hour, minute, 0, 0);
+  return d.toISOString();
+}
+
+async function seedDemoInterviews(supabase: any, interviewerId: string) {
+  const usedNames = new Set<string>();
+  const usedQuestionSets = new Set<number>();
+  const interviewsToInsert = [1, 4, 8].map((daysAhead) => {
+    const candidateName = randomDemoName(usedNames);
+    return {
+      interviewer_id: interviewerId,
+      candidate_email: emailFromName(candidateName),
+      candidate_name: candidateName,
+      role: pickRandom(DEMO_ROLES),
+      scheduled_at: randomFutureDateIso(daysAhead + Math.floor(Math.random() * 2)),
+      status: 'scheduled',
+    };
+  });
+
+  const { data: inserted, error: insertErr } = await supabase
+    .from('planned_interviews')
+    .insert(interviewsToInsert)
+    .select('id, candidate_email, candidate_name, role, scheduled_at, status');
+
+  if (insertErr || !inserted) {
+    console.warn('Demo interview insert failed', insertErr);
+    return null;
+  }
+
+  const questionRows: { interview_id: string; prompt: string; order_number: number }[] = [];
+  for (const iv of inserted) {
+    let bankIdx = Math.floor(Math.random() * DEMO_QUESTION_BANK.length);
+    for (let i = 0; i < DEMO_QUESTION_BANK.length && usedQuestionSets.has(bankIdx); i++) {
+      bankIdx = (bankIdx + 1) % DEMO_QUESTION_BANK.length;
+    }
+    usedQuestionSets.add(bankIdx);
+    const prompts = DEMO_QUESTION_BANK[bankIdx]!;
+    prompts.forEach((prompt, i) => {
+      questionRows.push({ interview_id: iv.id, prompt, order_number: i + 1 });
+    });
+  }
+
+  if (questionRows.length > 0) {
+    const { error: qErr } = await supabase.from('questions').insert(questionRows);
+    if (qErr) console.warn('Demo question insert failed', qErr);
+  }
+
+  return inserted.sort((a: any, b: any) =>
+    String(a.scheduled_at ?? '').localeCompare(String(b.scheduled_at ?? ''))
   );
 }
 
