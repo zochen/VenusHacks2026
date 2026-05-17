@@ -262,24 +262,30 @@ export default function InterviewerDashboardPage() {
 
   async function persistQuestionsToSupabase(interviewId: string, newText: string | null) {
     const supabase = getSupabase();
-    if (!user || !supabase) return;
+    if (!user || !supabase) return true;
     const { error: delErr } = await supabase
       .from('questions')
       .delete()
       .eq('interview_id', interviewId);
     if (delErr) {
       console.warn('Failed to delete existing questions before update', delErr);
-      return;
+      setEvalError(delErr.message);
+      return false;
     }
-    if (!newText) return;
+    if (!newText) return true;
     const rows = newText
       .split('\n')
       .map((s) => s.trim())
       .filter(Boolean)
       .map((prompt, i) => ({ interview_id: interviewId, prompt, order_number: i + 1 }));
-    if (rows.length === 0) return;
+    if (rows.length === 0) return true;
     const { error: insErr } = await supabase.from('questions').insert(rows);
-    if (insErr) console.warn('Failed to insert updated questions', insErr);
+    if (insErr) {
+      console.warn('Failed to insert updated questions', insErr);
+      setEvalError(insErr.message);
+      return false;
+    }
+    return true;
   }
 
   async function fetchFindings(questions: string[]): Promise<BiasFinding[]> {
@@ -374,8 +380,8 @@ export default function InterviewerDashboardPage() {
         }
       }
     } catch {}
-    void persistQuestionsToSupabase(selected.id, newText);
     setEvalDirty(false);
+    void persistQuestionsToSupabase(selected.id, newText);
   }
 
   function triggerFlash() {
@@ -413,6 +419,10 @@ export default function InterviewerDashboardPage() {
 
     setSelected({ ...selected, questionsText: newText });
     setStored((prev) => prev.map((iv) => (iv.id === selected.id ? { ...iv, questionsText: newText } : iv)));
+    setEditingQuestions(null);
+    setEvaluation(null);
+    setExpandedEval(null);
+    setEvalDirty(false);
 
     try {
       const raw = localStorage.getItem('capyconnect.interviews');
@@ -427,7 +437,6 @@ export default function InterviewerDashboardPage() {
     } catch {}
 
     void persistQuestionsToSupabase(selected.id, newText);
-    setEditingQuestions(null);
   }
 
   React.useEffect(() => {
