@@ -19,6 +19,34 @@ export function HeaderNav() {
     } catch {}
   }, []);
 
+  React.useEffect(() => {
+    const loadRole = async () => {
+      if (!user || !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        return;
+      }
+
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      );
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!error && (data?.role === 'candidate' || data?.role === 'interviewer')) {
+        setRole(data.role);
+        try {
+          localStorage.setItem('capyconnect.role', data.role);
+        } catch {}
+      }
+    };
+
+    void loadRole();
+  }, [user]);
+
   // read pathname so we can prefer the dashboard context when deciding
   // which profile link to show (this ensures the header on each dashboard
   // points to its matching profile page even if localStorage role is unset)

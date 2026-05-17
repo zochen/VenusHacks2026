@@ -48,6 +48,8 @@ CREATE TABLE public.user_profiles (
   birthdate DATE,
   location TEXT,
   avatar_url TEXT,
+  company TEXT,
+  company_role TEXT,
   role TEXT DEFAULT 'candidate', -- 'candidate', 'interviewer', 'both'
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -156,6 +158,10 @@ CREATE POLICY "Interviewers can insert interview questions" ON public.questions
 If you already created the tables before `selected_features` was added, run this migration once:
 
 ```sql
+ALTER TABLE public.user_profiles
+ADD COLUMN IF NOT EXISTS company TEXT,
+ADD COLUMN IF NOT EXISTS company_role TEXT;
+
 ALTER TABLE public.user_preferences
 ADD COLUMN IF NOT EXISTS selected_features TEXT[] DEFAULT ARRAY[]::TEXT[];
 ```
