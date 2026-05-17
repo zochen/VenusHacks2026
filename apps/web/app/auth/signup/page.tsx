@@ -86,8 +86,8 @@ export default function SignupPage() {
         return;
       }
 
-      // Redirect to login with success message
-      router.push('/auth/login?success=signup');
+  // Redirect to onboarding so the new user can finish profile
+  router.push('/onboarding');
     } catch (err) {
       setError('An unexpected error occurred');
       setIsLoading(false);

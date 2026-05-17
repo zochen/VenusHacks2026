@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 const publicRoutes = ['/auth/login', '/auth/signup', '/auth/callback', '/'];
 
 // Routes that require authentication
-const protectedRoutes = ['/candidate', '/interviewer', '/onboarding'];
+const protectedRoutes = ['/candidate', '/interviewer'];
 
 export async function middleware(request: NextRequest) {
   // Skip if environment variables aren't set (build time or misconfiguration)

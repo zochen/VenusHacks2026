@@ -95,7 +95,7 @@ export function HeaderNav() {
   }
 
   const dashboardHref = role === 'interviewer' ? '/interviewer/dashboard' : '/candidate/dashboard';
-  const profileHref = role === 'interviewer' ? '/interviewer/dashboard' : '/candidate/profile';
+  const profileHref = role === 'interviewer' ? '/interviewer/profile' : '/candidate/profile';
 
   return (
     <nav style={{ display: 'flex', gap: 12, fontSize: 14, alignItems: 'center' }}>
