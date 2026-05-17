@@ -7,12 +7,28 @@
   "host_permissions": [
     "https://meet.google.com/*",
     "https://*.zoom.us/*",
-    "https://teams.microsoft.com/*"
+    "https://teams.microsoft.com/*",
+    "http://localhost:3000/*",
+    "http://localhost/*"
   ],
   "background": {
     "service_worker": "src/background/index.ts",
     "type": "module"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://meet.google.com/*",
+        "https://*.zoom.us/*",
+        "https://teams.microsoft.com/*",
+        "http://localhost:3000/demo/*",
+        "http://localhost/demo/*"
+      ],
+      "js": ["src/content/index.tsx"],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
   "action": {
     "default_popup": "src/popup/index.html",
   "default_title": "CapyConnect"

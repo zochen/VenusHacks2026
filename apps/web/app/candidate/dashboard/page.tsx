@@ -185,11 +185,11 @@ export default function CandidateDashboardPage() {
               {formatWhen(next.whenISO).relative} · {formatWhen(next.whenISO).date} at {formatWhen(next.whenISO).time} · {next.durationMins} min
             </div>
           </div>
-          <Link href="/candidate/interview" style={{ textDecoration: 'none' }}>
+          <a href="/demo/index.html" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
             <Button variant="primary" size="lg">
               Open simulator →
             </Button>
-          </Link>
+          </a>
         </Card>
       )}
 

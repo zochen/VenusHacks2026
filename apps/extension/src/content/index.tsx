@@ -17,7 +17,8 @@ function mount() {
   const host = document.createElement('div');
   host.id = HOST_ID;
   // High z-index so we float above Meet/Zoom/Teams chrome.
-  host.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2147483646;';
+  // Allow pointer events on the host so the overlay's interactive children can receive clicks.
+  host.style.cssText = 'position:fixed;inset:0;pointer-events:auto;z-index:2147483646;';
   document.body.appendChild(host);
   createRoot(host).render(<Overlay />);
 }

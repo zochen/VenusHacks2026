@@ -32,6 +32,7 @@ export function Overlay() {
   const [listening, setListening] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const recognitionRef = React.useRef<SpeechRecognitionLike | null>(null);
+  const autoStarted = React.useRef(false);
 
   const stopCaptions = React.useCallback(() => {
     recognitionRef.current?.stop();
@@ -94,6 +95,17 @@ export function Overlay() {
       recognitionRef.current = null;
     };
   }, [startCaptions, stopCaptions]);
+
+  // Auto-start captions on demo page
+  React.useEffect(() => {
+    if (autoStarted.current) return;
+    const isDemoPage = window.location.href.includes('/demo/');
+    if (isDemoPage) {
+      autoStarted.current = true;
+      // Small delay to ensure component is fully mounted
+      setTimeout(() => startCaptions(), 500);
+    }
+  }, [startCaptions]);
 
   if (collapsed) {
     return (
