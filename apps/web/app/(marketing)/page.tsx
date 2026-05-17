@@ -279,18 +279,42 @@ export default function MarketingPage() {
                       >
                         <div style={{ maxWidth: 900, textAlign: idx === 0 ? 'left' : 'right' }}>
                           <h3 className="capy-title" style={{ margin: '0 0 12px', fontSize: 28 }}>{s.title}</h3>
-                          <p style={{ margin: 0, color: '#345a73', fontSize: 18, lineHeight: 1.6 }}>{s.body}</p>
+                          {s.title === 'Communication Support' ? (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start', justifyContent: 'flex-end' }}>
+                              <p style={{ margin: 0, color: '#345a73', fontSize: 18, lineHeight: 1.6, flex: '1 1 320px' }}>{s.body}</p>
+                              <img
+                                src="/1.png"
+                                alt="Friendly capybara illustration"
+                                style={{
+                                  width: 280,
+                                  maxWidth: '100%',
+                                  background: 'transparent',
+                                  display: 'block',
+                                  flex: '0 0 auto',
+                                  marginLeft: 'auto',
+                                  transform: 'translateX(18px)',
+                                  position: 'relative',
+                                  zIndex: 2,
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <p style={{ margin: 0, color: '#345a73', fontSize: 18, lineHeight: 1.6 }}>{s.body}</p>
+                          )}
                         </div>
                       </div>
                       {idx === 0 && (
                         <div
                           aria-hidden="true"
                           style={{
+                            position: 'relative',
+                            zIndex: 3,
                             flex: '0 0 auto',
                             width: '100vw',
                             marginLeft: 'calc(50% - 50vw)',
                             marginRight: 'calc(50% - 50vw)',
                             lineHeight: 0,
+                            marginTop: pairIdx === 2 ? -170 : -120,
                           }}
                         >
                           <svg data-invert xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 80 }}>
@@ -310,6 +334,7 @@ export default function MarketingPage() {
                     marginLeft: 'calc(50% - 50vw)',
                     marginRight: 'calc(50% - 50vw)',
                     lineHeight: 0,
+                    marginTop: pairIdx === 1 ? -72 : 0,
                   }}
                 >
                   <svg data-invert xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 90 }}>

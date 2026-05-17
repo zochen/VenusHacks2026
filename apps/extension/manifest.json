@@ -3,7 +3,7 @@
   "name": "CapyConnect",
   "version": "0.0.1",
   "description": "Accessibility overlay for technical interviews on Google Meet, Zoom, and Microsoft Teams.",
-  "permissions": ["storage", "activeTab", "tabs"],
+  "permissions": ["storage", "activeTab", "tabs", "scripting"],
   "background": {
     "service_worker": "src/background/index.ts",
     "type": "module"

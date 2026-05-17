@@ -137,7 +137,38 @@ export function Popup() {
   }
 
   async function startCaptionDemo() {
-    setDemoStatus('Overlay injection is disabled.');
+    setDemoStatus('Injecting overlay...');
+    chrome.tabs?.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs[0]?.id;
+      if (!tabId) {
+        setDemoStatus('No active tab available for overlay injection.');
+        return;
+      }
+      chrome.scripting?.executeScript(
+        {
+          target: { tabId },
+          func: injectCaptionDemo,
+          args: [
+            {
+              room: roomCode || null,
+              relayUrl: relayUrl || null,
+              role: role ?? undefined,
+              presets: role === 'interviewer' ? PRESET_QUESTIONS.map((q) => ({ text: q.text })) : undefined,
+              mascotUrl: chrome.runtime?.getURL('CapyConnect_avatar.png'),
+              showMascot,
+            },
+          ],
+        },
+        () => {
+          const err = chrome.runtime?.lastError;
+          if (err) {
+            setDemoStatus(`Overlay injection failed: ${err.message}`);
+          } else {
+            setDemoStatus('Overlay injection enabled.');
+          }
+        }
+      );
+    });
   }
 
   return (
