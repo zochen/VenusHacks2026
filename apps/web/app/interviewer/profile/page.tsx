@@ -58,11 +58,18 @@ export default function InterviewerProfilePage() {
         .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error || !profile) {
+      if (error) {
         console.warn('Failed to load interviewer profile from Supabase', error);
-        setInfo(EMPTY_INFO);
+        setInfo(loadProfile());
+        return;
+      }
+
+      if (!profile) {
+        // No saved row yet — pre-fill from whatever onboarding stored locally
+        // so the user doesn't see an empty edit form on first visit.
+        setInfo(loadProfile());
         return;
       }
 

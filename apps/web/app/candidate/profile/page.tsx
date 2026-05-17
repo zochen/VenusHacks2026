@@ -137,7 +137,7 @@ export default function CandidateProfilePage() {
           .from('user_profiles')
           .select('*')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (!profileError && profile) {
           setInfo({
@@ -165,7 +165,7 @@ export default function CandidateProfilePage() {
             .from('user_preferences')
             .select('*')
             .eq('user_id', user.id)
-            .single();
+            .maybeSingle();
 
           if (!prefsError && prefs) {
             const bundle = (prefs.communication_style as CommunicationStyle | null) ?? 'default';

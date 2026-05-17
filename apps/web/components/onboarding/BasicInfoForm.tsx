@@ -201,7 +201,7 @@ export function BasicInfoForm({
               type="text"
               value={info.fullName}
               onChange={(e) => set('fullName', e.target.value)}
-              placeholder="Priya Shah"
+              placeholder="Your full name"
               autoComplete="name"
               style={inputStyle}
               disabled={readOnly}
@@ -215,7 +215,7 @@ export function BasicInfoForm({
                 type="text"
                 value={info.username}
                 onChange={(e) => set('username', e.target.value.replace(/\s/g, ''))}
-                placeholder="priya"
+                placeholder="username"
                 autoComplete="username"
                 style={{ ...inputStyle, border: 'none', background: 'transparent', padding: '10px 12px 10px 4px' }}
               />
