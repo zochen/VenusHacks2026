@@ -66,9 +66,18 @@ export default function MarketingPage() {
   return (
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: '56px 32px' }}>
       {/* Large brand logo with soft blue oval gradient */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24, position: 'relative' }}>
-        <div style={{ position: 'absolute', width: '68%', height: 220, borderRadius: 200, background: 'radial-gradient(ellipse at center, rgba(74,144,226,0.14), rgba(74,144,226,0.04))', zIndex: 0, top: 18 }} />
-        <img src="/CapyConnect_logo.PNG" alt="CapyConnect" style={{ width: 520, height: 520, objectFit: 'contain', borderRadius: 24, zIndex: 2 }} />
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        marginBottom: 24,
+        position: 'relative',
+        minHeight: 420,
+        overflow: 'visible',
+      }}
+    >        {/* Smooth ombre cloud behind the logo; aria-hidden since decorative */}
+        <div className="logo-cloud" aria-hidden="true" />
+        <img className="hero-logo" src="/CapyConnect_logo.PNG" alt="CapyConnect" />
       </div>
       {/* Hero Section */}
       <section style={{ display: 'grid', gridTemplateColumns: '1fr 480px', gap: 32, alignItems: 'center', marginBottom: 64 }}>
@@ -195,6 +204,43 @@ export default function MarketingPage() {
           @keyframes float1 { 0%{ transform: translateY(0) } 50%{ transform: translateY(8px) } 100%{ transform: translateY(0) } }
           @keyframes float2 { 0%{ transform: translateY(0) } 50%{ transform: translateY(-6px) } 100%{ transform: translateY(0) } }
           @keyframes float3 { 0%{ transform: translateY(0) } 50%{ transform: translateY(10px) } 100%{ transform: translateY(0) } }
+
+          /* Hero logo and ombre cloud */
+          .logo-cloud {
+            position: absolute;
+            z-index: 1;
+            top: 0;
+            width: 80%;
+            max-width: 900px;
+            height: 420px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 999px;
+
+            background:
+              radial-gradient(
+                ellipse at center,
+                rgba(74,144,226,0.35) 0%,
+                rgba(74,144,226,0.18) 35%,
+                rgba(74,144,226,0.08) 55%,
+                rgba(255,255,255,0) 80%
+              );
+
+            filter: blur(10px);
+            opacity: 1;
+            pointer-events: none;
+          }
+
+          .hero-logo { position: relative; z-index: 2; width: 320px; height: 320px; object-fit: contain; border-radius: 28px; }
+          @media (min-width: 1200px) { .hero-logo { width: 420px; height: 420px; } }
+          @media (max-width: 900px) { .hero-logo { width: 260px; height: 260px; } .logo-cloud { height: 320px; } }
+          @media (max-width: 520px) { .hero-logo { width: 180px; height: 180px; } .logo-cloud { height: 220px; width: 92%; top: 6px; } }
+
+          @keyframes breathe {
+            0% { transform: translateX(-50%) scale(1); opacity: 0.94; }
+            50% { transform: translateX(-50%) scale(1.035); opacity: 1; }
+            100% { transform: translateX(-50%) scale(1); opacity: 0.94; }
+          }
         `}</style>
 
         {/* IntersectionObserver set up in a client-side effect */}
