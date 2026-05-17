@@ -13,20 +13,15 @@
     "service_worker": "src/background/index.ts",
     "type": "module"
   },
-  "content_scripts": [
-    {
-      "matches": [
-        "https://meet.google.com/*",
-        "https://*.zoom.us/*",
-        "https://teams.microsoft.com/*"
-      ],
-      "js": ["src/content/index.tsx"],
-      "run_at": "document_idle"
-    }
-  ],
   "action": {
     "default_popup": "src/popup/index.html",
   "default_title": "CapyConnect"
   },
-  "options_page": "src/options/index.html"
+  "options_page": "src/options/index.html",
+  "web_accessible_resources": [
+    {
+      "resources": ["CapyConnect_avatar.png"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

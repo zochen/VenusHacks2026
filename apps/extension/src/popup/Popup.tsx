@@ -31,13 +31,15 @@ export function Popup() {
   const [role, setRole] = React.useState<Role | null>(null);
   const [relayState, setRelayState] = React.useState<'idle' | 'connecting' | 'open' | 'closed' | 'error'>('idle');
   const [sentQuestion, setSentQuestion] = React.useState<string | null>(null);
+  const [showMascot, setShowMascot] = React.useState(true);
   const wsRef = React.useRef<WebSocket | null>(null);
 
   React.useEffect(() => {
-    chrome.storage?.local?.get(['capyRoom', 'capyRelayUrl', 'capyRole'], (v) => {
+    chrome.storage?.local?.get(['capyRoom', 'capyRelayUrl', 'capyRole', 'capyShowMascot'], (v) => {
       if (v.capyRoom) setRoomCode(String(v.capyRoom));
       if (v.capyRelayUrl) setRelayUrl(String(v.capyRelayUrl));
       if (v.capyRole === 'interviewer' || v.capyRole === 'candidate') setRole(v.capyRole);
+      if (typeof v.capyShowMascot === 'boolean') setShowMascot(v.capyShowMascot);
     });
   }, []);
 
@@ -83,6 +85,23 @@ export function Popup() {
     }
     ws.send(JSON.stringify(payload));
     return true;
+  }
+
+  async function toggleMascot(next: boolean) {
+    setShowMascot(next);
+    chrome.storage?.local?.set({ capyShowMascot: next });
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) return;
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: (show: boolean) => {
+          const m = document.getElementById('quietspace-demo-mascot');
+          if (m) (m as HTMLElement).style.display = show ? 'flex' : 'none';
+        },
+        args: [next],
+      });
+    } catch {}
   }
 
   function sendTopic(text: string) {
@@ -141,6 +160,21 @@ export function Popup() {
         setDemoStatus('Cannot inject on browser pages. Open any normal site.');
         return;
       }
+      // Fetch the mascot from the extension package and inline as a data URI
+      // so the injected script can render it regardless of the host page's CSP.
+      let mascotUrl = '';
+      try {
+        const res = await fetch(chrome.runtime.getURL('CapyConnect_avatar.png'));
+        const blob = await res.blob();
+        mascotUrl = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result));
+          r.onerror = () => reject(r.error);
+          r.readAsDataURL(blob);
+        });
+      } catch {
+        // leave empty; injected script will show fallback
+      }
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: injectCaptionDemo,
@@ -149,6 +183,8 @@ export function Popup() {
           relayUrl: relayUrl || null,
           role: role ?? 'candidate',
           presets: PRESET_QUESTIONS.map((q) => ({ text: q.text })),
+          mascotUrl,
+          showMascot,
         }],
       });
       setDemoStatus(
@@ -169,7 +205,7 @@ export function Popup() {
           alignItems: 'center',
           gap: 10,
           padding: '14px 16px',
-          background: 'linear-gradient(135deg, #f4f8f5 0%, #fff 100%)',
+          background: 'linear-gradient(135deg, #eaf6f8 0%, #fff 100%)',
           borderBottom: '1px solid #e1e5dd',
         }}
       >
@@ -182,7 +218,7 @@ export function Popup() {
 
       <section style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
         {/* Role selector */}
-        <div style={{ display: 'flex', gap: 6, background: '#f4f8f5', padding: 4, borderRadius: 10 }}>
+        <div style={{ display: 'flex', gap: 6, background: '#eaf6f8', padding: 4, borderRadius: 10 }}>
           <button
             type="button"
             onClick={() => saveRole('interviewer')}
@@ -222,7 +258,7 @@ export function Popup() {
               width: 10,
               height: 10,
               borderRadius: '50%',
-              background: hostSupported ? '#5b8b6f' : '#e0b072',
+              background: hostSupported ? '#20576C' : '#e0b072',
               flexShrink: 0,
             }}
           />
@@ -357,7 +393,7 @@ export function Popup() {
               })}
             </div>
             {sentQuestion && (
-              <div style={{ fontSize: 11, color: '#5b8b6f' }}>
+              <div style={{ fontSize: 11, color: '#20576C' }}>
                 ✓ Sent: <em>{sentQuestion}</em>
               </div>
             )}
@@ -378,9 +414,6 @@ export function Popup() {
                   {demoStatus}
                 </div>
               )}
-              <div style={{ fontSize: 10, color: '#6b7280', marginTop: 4 }}>
-                Speak naturally — anything ending in "?" or starting with how/what/why/etc. is pushed to the candidate.
-              </div>
             </div>
           </div>
         )}
@@ -399,6 +432,35 @@ export function Popup() {
             {demoStatus && (
               <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'center' }}>{demoStatus}</div>
             )}
+            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#eaf6f8', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#2a2d33' }}>
+              <span>🐹 Show Capy mascot</span>
+              <span
+                role="switch"
+                aria-checked={showMascot}
+                onClick={() => toggleMascot(!showMascot)}
+                style={{
+                  position: 'relative',
+                  display: 'inline-block',
+                  width: 36,
+                  height: 20,
+                  background: showMascot ? '#68C5DC' : '#cbd5d6',
+                  borderRadius: 999,
+                  transition: 'background .15s',
+                }}
+              >
+                <span style={{
+                  position: 'absolute',
+                  top: 2,
+                  left: showMascot ? 18 : 2,
+                  width: 16,
+                  height: 16,
+                  background: '#fff',
+                  borderRadius: '50%',
+                  transition: 'left .15s',
+                  boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+                }} />
+              </span>
+            </label>
             <button
               type="button"
               onClick={() => openWeb('/candidate/dashboard')}
@@ -420,33 +482,14 @@ export function Popup() {
           Settings
         </button>
 
-        {/* Supported hosts */}
-        <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'center', paddingTop: 4 }}>
-          Works on Google Meet, Zoom, and Microsoft Teams.
-        </div>
       </section>
-
-      <footer
-        style={{
-          padding: '8px 16px',
-          background: '#fafafa',
-          borderTop: '1px solid #e1e5dd',
-          fontSize: 10,
-          color: '#6b7280',
-          display: 'flex',
-          justifyContent: 'space-between',
-        }}
-      >
-        <span>Starter build</span>
-        <span>v0.0.1</span>
-      </footer>
     </main>
   );
 }
 
 const primaryButtonStyle: React.CSSProperties = {
   padding: '10px 14px',
-  background: '#5b8b6f',
+  background: '#20576C',
   color: '#fff',
   border: 'none',
   borderRadius: 10,
@@ -469,7 +512,7 @@ const secondaryButtonStyle: React.CSSProperties = {
 const roleActiveStyle: React.CSSProperties = {
   flex: 1,
   padding: '8px 10px',
-  background: '#5b8b6f',
+  background: '#20576C',
   color: '#fff',
   border: 'none',
   borderRadius: 8,
@@ -500,7 +543,7 @@ function relayStatusLabel(state: string, room: string) {
 }
 
 function relayStatusColor(state: string) {
-  if (state === 'open') return '#5b8b6f';
+  if (state === 'open') return '#20576C';
   if (state === 'error') return '#c45c5c';
   if (state === 'connecting') return '#e0b072';
   return '#6b7280';
@@ -518,7 +561,7 @@ const ghostButtonStyle: React.CSSProperties = {
 export default Popup;
 
 // Runs in the page (via chrome.scripting.executeScript). Must be self-contained.
-function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null; role?: 'interviewer' | 'candidate'; presets?: { text: string }[] }) {
+function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null; role?: 'interviewer' | 'candidate'; presets?: { text: string }[]; mascotUrl?: string; showMascot?: boolean }) {
   const HOST_ID = 'quietspace-demo-overlay';
   const QHOST_ID = 'quietspace-demo-questions';
   const existing = document.getElementById(HOST_ID);
@@ -528,10 +571,54 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
   if (existing || existingQ) {
     existing?.remove();
     existingQ?.remove();
+    document.getElementById('quietspace-demo-mascot')?.remove();
+    document.getElementById('quietspace-demo-mascot-tab')?.remove();
+    document.getElementById('quietspace-demo-mascot-style')?.remove();
+    document.getElementById('quietspace-demo-blur')?.remove();
+    document.getElementById('quietspace-demo-blur-btn')?.remove();
+    document.querySelectorAll('.quietspace-demo-blur-rect').forEach((el) => el.remove());
     (window as any).__capyRelaySocket?.close?.();
     (window as any).__capyRelaySocket = null;
     return;
   }
+  function makeDraggable(el: HTMLElement, handle: HTMLElement) {
+    handle.style.cursor = 'move';
+    let dragging = false;
+    let startX = 0, startY = 0, originLeft = 0, originTop = 0;
+    handle.addEventListener('mousedown', (e) => {
+      // Ignore drags that begin on interactive children (buttons, inputs).
+      const target = e.target as HTMLElement;
+      if (target.closest('button, input, textarea, a, select')) return;
+      dragging = true;
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      // Convert any right/bottom positioning to left/top once.
+      el.style.left = rect.left + 'px';
+      el.style.top = rect.top + 'px';
+      el.style.right = 'auto';
+      el.style.bottom = 'auto';
+      startX = e.clientX;
+      startY = e.clientY;
+      originLeft = rect.left;
+      originTop = rect.top;
+      document.body.style.userSelect = 'none';
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      const maxX = window.innerWidth - el.offsetWidth;
+      const maxY = window.innerHeight - el.offsetHeight;
+      el.style.left = Math.max(0, Math.min(maxX, originLeft + dx)) + 'px';
+      el.style.top = Math.max(0, Math.min(maxY, originTop + dy)) + 'px';
+    });
+    window.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      document.body.style.userSelect = '';
+    });
+  }
+
   const room = opts?.room || null;
   const relayUrl = opts?.relayUrl || 'ws://localhost:8787';
   const role = opts?.role === 'interviewer' ? 'interviewer' : 'candidate';
@@ -547,64 +634,197 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
   const host = document.createElement('div');
   host.id = HOST_ID;
   host.style.cssText =
-    'position:fixed;right:20px;bottom:20px;width:340px;background:#fff;border:1px solid #e1e5dd;border-radius:16px;box-shadow:0 12px 32px rgba(20,30,25,.18);font:14px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#2a2d33;z-index:2147483647;overflow:hidden;';
+    "position:fixed;right:20px;bottom:20px;width:340px;background:rgba(32,87,108,0.85);border:3px solid #68C5DC;border-radius:10px;box-shadow:0 16px 40px rgba(20,30,25,.35);font-family:'Outfit',system-ui,sans-serif;color:#fff !important;z-index:2147483647;overflow:hidden;backdrop-filter:blur(6px);display:flex;flex-direction:column;";
   host.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(135deg,#f4f8f5,#fff);border-bottom:1px solid #e1e5dd;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid rgba(104,197,220,.4);">
       <div>
-        <div style="font-weight:700;">🌿 CapyConnect · ${role === 'interviewer' ? 'Interviewer mic' : 'Captions'}</div>
-        <div id="qs-demo-room" style="font-size:10px;color:#6b7280;margin-top:2px;"></div>
+        <div style="font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;letter-spacing:.5px;text-transform:uppercase;color:#cdeefa;">${role === 'interviewer' ? 'Interviewer mic' : 'Captions'}</div>
+        <div id="qs-demo-room" style="font-size:10px;color:rgba(255,255,255,.65);margin-top:2px;"></div>
       </div>
-      <button id="qs-demo-close" style="background:transparent;border:none;cursor:pointer;font-size:18px;color:#6b7280;">×</button>
+      <button id="qs-demo-close" style="background:transparent;border:none;cursor:pointer;font-size:20px;color:#cdeefa;line-height:1;">×</button>
     </div>
-    <div id="qs-demo-status" style="padding:6px 14px;font-size:11px;color:#6b7280;">Click "Start" and allow microphone access.</div>
-    <div id="qs-demo-captions" aria-live="polite" style="margin:8px 14px;padding:12px 14px;min-height:64px;background:rgba(20,30,25,.85);color:#fff !important;border-radius:10px;font-size:16px;line-height:1.4;">Waiting for speech…</div>
-    <div style="padding:10px 14px;display:flex;gap:8px;border-top:1px solid #e1e5dd;background:#fafafa;">
-      <button id="qs-demo-start" style="flex:1;padding:8px 12px;background:#5b8b6f;color:#fff !important;border:none;border-radius:8px;cursor:pointer;font-weight:600;">🎙 Start</button>
-      <button id="qs-demo-stop" style="flex:1;padding:8px 12px;background:#c45c5c;color:#fff !important;border:none;border-radius:8px;cursor:pointer;font-weight:600;" disabled>■ Stop</button>
+    <div id="qs-demo-status" style="display:none;"></div>
+    <div id="qs-demo-captions" aria-live="polite" style="margin:12px 18px;padding:12px 14px;min-height:64px;background:rgba(20,30,25,.55);color:#fff !important;border-radius:10px;font-size:16px;line-height:1.4;font-family:'Outfit',sans-serif;">Click "Start" and allow microphone access.</div>
+    <div style="padding:10px 18px;display:flex;gap:8px;border-top:1px solid rgba(104,197,220,.25);">
+      <button id="qs-demo-toggle" style="flex:1;padding:8px 12px;background:#68C5DC;color:#20576C !important;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">🎙 Start</button>
     </div>
-    <div style="padding:10px 14px;display:flex;gap:6px;border-top:1px solid #e1e5dd;background:#f7fbff;">
-      <input id="qs-demo-text" type="text" placeholder="Type to test relay…" style="flex:1;padding:6px 10px;border:1px solid #d6e4f0;border-radius:6px;font:13px system-ui;outline:none;" />
-      <button id="qs-demo-send-cap" title="Send as caption" style="padding:6px 10px;background:#2b6ea3;color:#fff !important;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;">💬</button>
-      <button id="qs-demo-send-q" title="Send as question" style="padding:6px 10px;background:#8a5cf2;color:#fff !important;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;">❓</button>
+    <div style="padding:10px 18px 14px;display:flex;gap:6px;border-top:1px solid rgba(104,197,220,.25);">
+      <input id="qs-demo-text" type="text" placeholder="Type to test relay…" style="flex:1;padding:8px 12px;border:none;border-radius:10px;font:13px 'Outfit',system-ui,sans-serif;outline:none;background:rgba(20,30,25,.55);color:#fff;" />
+      <button id="qs-demo-send-cap" title="Send as caption" style="padding:6px 10px;background:#68C5DC;color:#20576C !important;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px;">💬</button>
+      <button id="qs-demo-send-q" title="Send as question" style="padding:6px 10px;background:#AFF0FF;color:#20576C !important;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px;">❓</button>
     </div>
   `;
   document.body.appendChild(host);
+  // Drag the captions panel by its header row.
+  const hostHeader = host.firstElementChild as HTMLElement | null;
+  if (hostHeader) makeDraggable(host, hostHeader);
 
-  // Load Poppins once for the panel theme.
+  if (!document.getElementById('qs-demo-host-style')) {
+    const s = document.createElement('style');
+    s.id = 'qs-demo-host-style';
+    s.textContent =
+      '#qs-demo-text::placeholder { color: rgba(255,255,255,0.85); opacity: 1; }';
+    document.head.appendChild(s);
+  }
+
+  // Eye button — toggle "draw a blur rectangle" mode.
+  const blurBtn = document.createElement('button');
+  blurBtn.id = 'quietspace-demo-blur-btn';
+  blurBtn.type = 'button';
+  blurBtn.title = 'Drag on the page to blur an area';
+  blurBtn.style.cssText =
+    'position:fixed;right:380px;bottom:20px;width:89px;height:89px;background:#AFF0FF;border:none;border-radius:100px;box-shadow:0 8px 20px rgba(20,30,25,.18);cursor:pointer;z-index:2147483647;transition:transform .15s ease-out, background .2s;padding:0;';
+  const EYE_WRAP = (inner: string) =>
+    `<span style="position:absolute;width:54px;height:54px;left:calc(50% - 27px);top:calc(50% - 27px);display:block;">${inner}</span>`;
+  const EYE_OPEN_SVG = EYE_WRAP(`
+    <svg width="54" height="54" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path fill="#34748D" d="M12 9a3 3 0 0 1 3 3a3 3 0 0 1-3 3a3 3 0 0 1-3-3a3 3 0 0 1 3-3m0-4.5c5 0 9.27 3.11 11 7.5c-1.73 4.39-6 7.5-11 7.5S2.73 16.39 1 12c1.73-4.39 6-7.5 11-7.5Z"/>
+    </svg>
+  `);
+  const EYE_CLOSED_SVG = EYE_WRAP(`
+    <svg width="54" height="54" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path fill="#34748D" d="M11.83 9L15 12.16V12a3 3 0 0 0-3-3h-.17m-4.3.8l1.55 1.55c-.05.21-.08.42-.08.65a3 3 0 0 0 3 3c.22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53a5 5 0 0 1-5-5c0-.79.2-1.53.53-2.2M2 4.27l2.28 2.28l.45.45C3.08 8.3 1.78 10 1 12c1.73 4.39 6 7.5 11 7.5c1.55 0 3.03-.3 4.38-.84l.43.42L19.73 22L21 20.73L3.27 3M12 7a5 5 0 0 1 5 5c0 .64-.13 1.26-.36 1.82l2.93 2.93c1.5-1.25 2.7-2.89 3.43-4.75c-1.73-4.39-6-7.5-11-7.5c-1.4 0-2.74.25-4 .7l2.17 2.15C10.74 7.13 11.35 7 12 7Z"/>
+    </svg>
+  `);
+  blurBtn.innerHTML = EYE_CLOSED_SVG;
+  document.body.appendChild(blurBtn);
+
+  // Full-page capture overlay shown only while in draw-blur mode.
+  const drawOverlay = document.createElement('div');
+  drawOverlay.id = 'quietspace-demo-blur';
+  drawOverlay.style.cssText =
+    'position:fixed;inset:0;cursor:crosshair;z-index:2147483646;display:none;background:rgba(52,116,141,0.06);';
+  const hint = document.createElement('div');
+  hint.textContent = 'Drag to blur an area · Esc to cancel';
+  hint.style.cssText =
+    "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#34748D;color:#fff;padding:8px 16px;border-radius:999px;font:600 13px 'Outfit',system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.25);pointer-events:none;";
+  drawOverlay.appendChild(hint);
+  document.body.appendChild(drawOverlay);
+
+  let drawMode = false;
+  let previewRect: HTMLDivElement | null = null;
+  let startX = 0, startY = 0;
+
+  function setBtnActive(active: boolean) {
+    blurBtn.style.background = active ? '#34748D' : '#AFF0FF';
+    blurBtn.innerHTML = active ? EYE_OPEN_SVG : EYE_CLOSED_SVG;
+    const p = blurBtn.querySelector('path');
+    if (p) p.setAttribute('fill', active ? '#AFF0FF' : '#34748D');
+  }
+  function enterDrawMode() {
+    drawMode = true;
+    drawOverlay.style.display = 'block';
+    setBtnActive(true);
+  }
+  function exitDrawMode() {
+    drawMode = false;
+    drawOverlay.style.display = 'none';
+    setBtnActive(false);
+    if (previewRect) { previewRect.remove(); previewRect = null; }
+  }
+
+  blurBtn.addEventListener('click', () => {
+    if (drawMode) exitDrawMode(); else enterDrawMode();
+  });
+  blurBtn.addEventListener('mouseenter', () => { blurBtn.style.transform = 'scale(1.06)'; });
+  blurBtn.addEventListener('mouseleave', () => { blurBtn.style.transform = 'scale(1)'; });
+
+  drawOverlay.addEventListener('mousedown', (e) => {
+    startX = e.clientX; startY = e.clientY;
+    previewRect = document.createElement('div');
+    previewRect.style.cssText =
+      `position:fixed;left:${startX}px;top:${startY}px;width:0;height:0;border:2px dashed #34748D;background:rgba(175,240,255,0.18);z-index:2147483646;pointer-events:none;border-radius:6px;`;
+    document.body.appendChild(previewRect);
+  });
+  drawOverlay.addEventListener('mousemove', (e) => {
+    if (!previewRect) return;
+    const x = Math.min(startX, e.clientX);
+    const y = Math.min(startY, e.clientY);
+    const w = Math.abs(e.clientX - startX);
+    const h = Math.abs(e.clientY - startY);
+    previewRect.style.left = x + 'px';
+    previewRect.style.top = y + 'px';
+    previewRect.style.width = w + 'px';
+    previewRect.style.height = h + 'px';
+  });
+  drawOverlay.addEventListener('mouseup', () => {
+    if (!previewRect) return;
+    const r = previewRect.getBoundingClientRect();
+    previewRect.remove();
+    previewRect = null;
+    if (r.width < 12 || r.height < 12) { exitDrawMode(); return; }
+
+    const blurBox = document.createElement('div');
+    blurBox.className = 'quietspace-demo-blur-rect';
+    blurBox.style.cssText =
+      `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(255,255,255,0.04);z-index:2147483640;border-radius:8px;box-shadow:0 0 0 1px rgba(52,116,141,0.3);pointer-events:none;`;
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.textContent = '×';
+    close.title = 'Remove blur';
+    close.style.cssText =
+      'position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:#34748D;color:#fff;border:none;cursor:pointer;font-size:16px;line-height:1;pointer-events:auto;display:flex;align-items:center;justify-content:center;';
+    close.addEventListener('click', () => blurBox.remove());
+    blurBox.appendChild(close);
+    document.body.appendChild(blurBox);
+    exitDrawMode();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawMode) exitDrawMode();
+  });
+
+  // Load Outfit once for the panel theme.
   if (!document.getElementById('qs-poppins-link')) {
     const link = document.createElement('link');
     link.id = 'qs-poppins-link';
     link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap';
+    link.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&display=swap';
     document.head.appendChild(link);
   }
 
   // Separate top-right panel for detected questions.
   const qHost = document.createElement('div');
   qHost.id = QHOST_ID;
-  const panelTitle = role === 'interviewer' ? 'Question board' : 'Interview so far';
+  const panelTitle = role === 'interviewer' ? 'Question board' : 'Topic';
   const panelHint = role === 'interviewer'
     ? 'Pick a preset topic to begin…'
     : 'Waiting for the interviewer to ask a question…';
   qHost.style.cssText =
-    "position:fixed;top:20px;right:20px;width:379px;max-height:80vh;background:rgba(32,87,108,0.85);border:3px solid #68C5DC;border-radius:10px;box-shadow:0 16px 40px rgba(20,30,25,.35);font-family:'Poppins',system-ui,sans-serif;color:#fff !important;z-index:2147483647;overflow:hidden;display:flex;flex-direction:column;backdrop-filter:blur(6px);";
+    "position:fixed;top:20px;right:20px;width:379px;max-height:80vh;background:rgba(32,87,108,0.85);border:3px solid #68C5DC;border-radius:10px;box-shadow:0 16px 40px rgba(20,30,25,.35);font-family:'Outfit',system-ui,sans-serif;color:#fff !important;z-index:2147483647;overflow:hidden;display:flex;flex-direction:column;backdrop-filter:blur(6px);";
   qHost.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid rgba(104,197,220,.4);">
       <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-family:'Poppins',sans-serif;font-weight:700;font-size:14px;letter-spacing:.5px;text-transform:uppercase;color:#cdeefa;">${panelTitle}</span>
+        <span style="font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;letter-spacing:.5px;text-transform:uppercase;color:#cdeefa;">${panelTitle}</span>
       </div>
       <button id="qs-demo-qclose" style="background:transparent;border:none;cursor:pointer;font-size:20px;color:#cdeefa;line-height:1;">×</button>
     </div>
     <div id="qs-demo-topics" style="margin:0;padding:16px 22px 22px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;flex:1;">
-      <div id="qs-demo-qempty" style="color:rgba(255,255,255,.7);font-style:italic;font-size:14px;font-family:'Poppins',sans-serif;">${panelHint}</div>
+      <div id="qs-demo-qempty" style="color:rgba(255,255,255,.7);font-style:italic;font-size:14px;font-family:'Outfit',sans-serif;">${panelHint}</div>
     </div>
   `;
   document.body.appendChild(qHost);
+  // Drag the question board by its header row.
+  const qHostHeader = qHost.firstElementChild as HTMLElement | null;
+  if (qHostHeader) makeDraggable(qHost, qHostHeader);
 
   const status = host.querySelector('#qs-demo-status') as HTMLDivElement;
   const captions = host.querySelector('#qs-demo-captions') as HTMLDivElement;
-  const startBtn = host.querySelector('#qs-demo-start') as HTMLButtonElement;
-  const stopBtn = host.querySelector('#qs-demo-stop') as HTMLButtonElement;
+  const toggleBtn = host.querySelector('#qs-demo-toggle') as HTMLButtonElement;
+  function setToggleListening(listening: boolean) {
+    toggleBtn.textContent = listening ? '■ Stop' : '🎙 Start';
+    toggleBtn.style.background = listening ? '#20576C' : '#68C5DC';
+    toggleBtn.style.color = listening ? '#fff' : '#20576C';
+  }
+  captions.style.transition = 'box-shadow 220ms ease-out';
+  let glowTimer = 0;
+  function pulseCaptions() {
+    captions.style.boxShadow = '0 0 0 3px rgba(104,197,220,0.65), 0 0 18px 4px rgba(104,197,220,0.55)';
+    window.clearTimeout(glowTimer);
+    glowTimer = window.setTimeout(() => {
+      captions.style.boxShadow = 'none';
+    }, 350);
+  }
   const closeBtn = host.querySelector('#qs-demo-close') as HTMLButtonElement;
   const qTopics = qHost.querySelector('#qs-demo-topics') as HTMLDivElement;
   const qCount = { textContent: '' } as { textContent: string };
@@ -645,7 +865,7 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
       try { msg = JSON.parse(ev.data); } catch { return; }
       if (!msg || msg.__from === clientId) return;
       if (msg.type === '__presence') {
-        roomLabel.textContent = `Connected · room ${room} · ${msg.peers} peer${msg.peers === 1 ? '' : 's'}`;
+        roomLabel.textContent = `Connected · room ${room} · ${msg.peers} online`;
         return;
       }
       if (msg.type === 'topic') {
@@ -734,7 +954,10 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
   const topicGroups = new Map<string, { group: HTMLDivElement; fuWrap: HTMLDivElement; seen: Set<string> }>();
 
   function fmt(q: string) {
-    return /[.?!,;:]$/.test(q.trim()) ? q : q + '?';
+    const t = q.trim();
+    if (!t) return t;
+    const capped = t.replace(/^(\p{L})/u, (m) => m.toUpperCase());
+    return /[.?!,;:]$/.test(capped) ? capped : capped + '?';
   }
 
   function escapeHtml(s: string) {
@@ -812,7 +1035,7 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
       currentTopicKey = key;
       existing.group.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       qHost.animate(
-        [{ boxShadow: '0 0 0 3px #5b8b6f' }, { boxShadow: '0 12px 32px rgba(20,30,25,.18)' }],
+        [{ boxShadow: '0 0 0 3px #20576C' }, { boxShadow: '0 12px 32px rgba(20,30,25,.18)' }],
         { duration: 500 },
       );
       return;
@@ -828,7 +1051,7 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
     const head = document.createElement('div');
     head.dataset.topicHead = '1';
     head.style.cssText =
-      `font-family:'Poppins',sans-serif;font-weight:600;font-size:14px;line-height:1.4;color:#fff !important;${role === 'interviewer' ? 'cursor:pointer;user-select:none;' : ''}`;
+      `font-family:'Outfit',sans-serif;font-weight:600;font-size:14px;line-height:1.4;color:#fff !important;${role === 'interviewer' ? 'cursor:pointer;user-select:none;' : ''}`;
     head.innerHTML = role === 'interviewer' ? escapeHtml(fmt(trimmed)) : highlightKeywords(fmt(trimmed));
     if (role === 'interviewer') {
       head.title = 'Click to set this as the active topic';
@@ -840,7 +1063,7 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
     }
     const fuWrap = document.createElement('ul');
     fuWrap.style.cssText =
-      "list-style:disc;margin:4px 0 0;padding:0 0 0 22px;display:flex;flex-direction:column;gap:4px;font-family:'Poppins',sans-serif;color:#fff !important;";
+      "list-style:disc;margin:4px 0 0;padding:0 0 0 22px;display:flex;flex-direction:column;gap:4px;font-family:'Outfit',sans-serif;color:#fff !important;";
     group.appendChild(head);
     group.appendChild(fuWrap);
     qTopics.appendChild(group);
@@ -874,7 +1097,7 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
     qCount.textContent = String(totalCount);
     const row = document.createElement('li');
     row.style.cssText =
-      "font-family:'Poppins',sans-serif;font-weight:500;font-size:12px;line-height:1.4;color:#fff !important;list-style:disc;margin:0;padding:0;";
+      "font-family:'Outfit',sans-serif;font-weight:500;font-size:12px;line-height:1.4;color:#fff !important;list-style:disc;margin:0;padding:0;";
     row.innerHTML = role === 'interviewer' ? escapeHtml(fmt(trimmed)) : highlightKeywords(fmt(trimmed));
     currentTopicFollowUps.appendChild(row);
     qTopics.scrollTop = qTopics.scrollHeight;
@@ -898,9 +1121,7 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
     rec.interimResults = true;
     rec.lang = 'en-US';
     rec.onstart = () => {
-      status.textContent = 'Listening…';
-      startBtn.disabled = true;
-      stopBtn.disabled = false;
+      setToggleListening(true);
     };
     rec.onresult = (ev: any) => {
       let text = '';
@@ -916,6 +1137,7 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
       if (text.trim()) {
         captions.textContent = text;
         captions.style.background = 'rgba(20,30,25,.85)';
+        pulseCaptions();
         const now = Date.now();
         if (text !== lastSentCaption && now - lastCaptionAt > 350) {
           lastSentCaption = text;
@@ -924,31 +1146,23 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
         }
       }
     };
-    rec.onerror = (ev: any) => {
-      status.textContent = `Error: ${ev.error}`;
-    };
+    rec.onerror = () => {};
     rec.onend = () => {
       const wasManual = manuallyStopped;
       rec = null;
       if (wasManual) {
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-        status.textContent = 'Stopped.';
+        setToggleListening(false);
+        captions.textContent = 'Click "Start" and allow microphone access.';
         manuallyStopped = false;
         return;
       }
-      // Chrome ends recognition after silence or after a final result.
-      // Restart with a short delay to avoid InvalidStateError.
-      status.textContent = 'Restarting…';
       window.setTimeout(() => {
         if (!manuallyStopped) start();
       }, 250);
     };
     try {
       rec.start();
-    } catch (e: any) {
-      // InvalidStateError can fire if a previous instance hasn't fully torn down — retry once.
-      status.textContent = `Retrying… (${e?.message ?? e})`;
+    } catch {
       rec = null;
       window.setTimeout(() => {
         if (!manuallyStopped) start();
@@ -962,8 +1176,10 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
     rec.stop();
   }
 
-  startBtn.addEventListener('click', start);
-  stopBtn.addEventListener('click', stop);
+  toggleBtn.addEventListener('click', () => {
+    if (rec) stop();
+    else start();
+  });
   closeBtn.addEventListener('click', () => {
     stop();
     host.remove();
@@ -1000,6 +1216,51 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
     }
   });
 
+  // Candidate: floating mascot in the bottom-left, toggleable.
+  if (role === 'candidate') {
+    const MASCOT_ID = 'quietspace-demo-mascot';
+    const TAB_ID = 'quietspace-demo-mascot-tab';
+    const STYLE_ID = 'quietspace-demo-mascot-style';
+    document.getElementById(MASCOT_ID)?.remove();
+    document.getElementById(TAB_ID)?.remove();
+    document.getElementById(STYLE_ID)?.remove();
+    const mascotUrl = opts?.mascotUrl ?? '';
+
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = `
+      @keyframes qs-breathe {
+        0%   { filter: drop-shadow(0 0 6px rgba(104,197,220,0.30)) drop-shadow(0 0 14px rgba(74,144,226,0.18)); }
+        50%  { filter: drop-shadow(0 0 14px rgba(104,197,220,0.65)) drop-shadow(0 0 28px rgba(74,144,226,0.45)); }
+        100% { filter: drop-shadow(0 0 6px rgba(104,197,220,0.30)) drop-shadow(0 0 14px rgba(74,144,226,0.18)); }
+      }
+      #${MASCOT_ID} .qs-mascot-inner { position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+      #${MASCOT_ID} #qs-demo-mascot-img { animation: qs-breathe 5s ease-in-out infinite; }
+    `;
+    document.head.appendChild(style);
+
+    const mascot = document.createElement('div');
+    mascot.id = MASCOT_ID;
+    mascot.title = 'Drag to move · toggle from the extension popup';
+    const visible = opts?.showMascot !== false;
+    mascot.style.cssText =
+      `position:fixed;left:24px;bottom:24px;width:180px;height:180px;background:transparent;cursor:move;z-index:2147483647;user-select:none;display:${visible ? 'flex' : 'none'};align-items:center;justify-content:center;`;
+    mascot.innerHTML = `
+      <div class="qs-mascot-inner">
+        <img id="qs-demo-mascot-img" src="${mascotUrl}" alt="Capy" style="position:relative;width:100%;height:100%;object-fit:contain;pointer-events:none;display:block;" />
+        <div id="qs-demo-mascot-fallback" style="display:none;position:relative;width:100%;height:100%;align-items:center;justify-content:center;font-size:120px;">🦫</div>
+      </div>
+    `;
+    const imgEl = mascot.querySelector('#qs-demo-mascot-img') as HTMLImageElement;
+    const fbEl = mascot.querySelector('#qs-demo-mascot-fallback') as HTMLDivElement;
+    imgEl.addEventListener('error', () => {
+      imgEl.style.display = 'none';
+      fbEl.style.display = 'flex';
+    });
+    document.body.appendChild(mascot);
+    makeDraggable(mascot, mascot);
+  }
+
   // Interviewer: pre-populate the question board with all preset topics + follow-ups.
   if (role === 'interviewer' && opts?.presets?.length) {
     if (qEmpty?.parentElement) qEmpty.remove();
@@ -1021,7 +1282,7 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
 
       const head = document.createElement('span');
       head.dataset.topicHead = '1';
-      head.style.cssText = "flex:1;font-family:'Poppins',sans-serif;font-weight:600;font-size:14px;line-height:1.4;color:#fff !important;cursor:pointer;";
+      head.style.cssText = "flex:1;font-family:'Outfit',sans-serif;font-weight:600;font-size:14px;line-height:1.4;color:#fff !important;cursor:pointer;";
       head.textContent = fmt(trimmed);
 
       function applyChecked() {
@@ -1045,7 +1306,7 @@ function injectCaptionDemo(opts: { room: string | null; relayUrl: string | null;
       headRow.appendChild(head);
 
       const fuWrap = document.createElement('ul');
-      fuWrap.style.cssText = "list-style:disc;margin:4px 0 0 26px;padding:0 0 0 22px;display:flex;flex-direction:column;gap:4px;font-family:'Poppins',sans-serif;color:#fff !important;";
+      fuWrap.style.cssText = "list-style:disc;margin:4px 0 0 26px;padding:0 0 0 22px;display:flex;flex-direction:column;gap:4px;font-family:'Outfit',sans-serif;color:#fff !important;";
       group.appendChild(headRow);
       group.appendChild(fuWrap);
       qTopics.appendChild(group);
