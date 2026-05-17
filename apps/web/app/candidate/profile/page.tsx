@@ -60,6 +60,7 @@ function loadFeatures(): string[] | null {
 export default function CandidateProfilePage() {
   const [tab, setTab] = React.useState<Tab>('profile');
   const [info, setInfo] = React.useState<ProfileInfo>(EMPTY_INFO);
+  const [role, setRole] = React.useState<'candidate' | 'interviewer' | null>(null);
   const [profileSavedAt, setProfileSavedAt] = React.useState<number | null>(null);
   const [prefsSavedAt, setPrefsSavedAt] = React.useState<number | null>(null);
   const [hydrated, setHydrated] = React.useState(false);
@@ -68,6 +69,10 @@ export default function CandidateProfilePage() {
 
   React.useEffect(() => {
     setInfo(loadProfile());
+    try {
+      const rawRole = localStorage.getItem('capyconnect.role');
+      setRole((rawRole as any) ?? null);
+    } catch {}
     const prefs = loadPrefs();
     const features = loadFeatures();
     const bundle = prefs?.communicationStyle ?? 'default';
@@ -126,7 +131,7 @@ export default function CandidateProfilePage() {
         </Link>
       </header>
 
-      <Tabs tab={tab} onChange={setTab} />
+  <Tabs tab={tab} onChange={setTab} hidePreferences={role === 'interviewer'} />
 
       <div style={{ marginTop: 24 }}>
         {tab === 'profile' && (
@@ -136,10 +141,11 @@ export default function CandidateProfilePage() {
             onSubmit={handleProfileSave}
             mode="edit"
             savedAt={profileSavedAt}
+            role={role}
           />
         )}
 
-        {tab === 'preferences' && hydrated && (
+        {tab === 'preferences' && hydrated && role !== 'interviewer' && (
           <BundlePicker
             key={`prefs-${initialBundle}`}
             title="Communication preferences"
@@ -156,10 +162,12 @@ export default function CandidateProfilePage() {
   );
 }
 
-function Tabs({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
+function Tabs({ tab, onChange, hidePreferences = false }: { tab: Tab; onChange: (t: Tab) => void; hidePreferences?: boolean }) {
   const tabs: { id: Tab; label: string; icon: string }[] = [
     { id: 'profile', label: 'Profile', icon: '👤' },
-    { id: 'preferences', label: 'Communication preferences', icon: '🎛' },
+    ...(hidePreferences
+      ? []
+      : ([{ id: 'preferences' as Tab, label: 'Communication preferences', icon: '🎛' }] as { id: Tab; label: string; icon: string }[])),
   ];
   return (
     <div
