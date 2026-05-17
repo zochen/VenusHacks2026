@@ -270,7 +270,7 @@ export default function CandidateProfilePage() {
   }
 
   return (
-    <main style={{ maxWidth: 1080, margin: '0 auto', padding: '40px 32px' }}>
+    <main style={{ maxWidth: 1080, margin: '0 auto', padding: '40px 32px', fontFamily: "Poppins, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial" }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button
@@ -288,19 +288,22 @@ export default function CandidateProfilePage() {
             Edit your profile
           </button>
         </div>
-        <Link
-          href="/candidate/dashboard"
-          style={{
-            padding: '8px 14px',
-            border: '1px solid #e1e5dd',
-            borderRadius: 12,
-            color: '#2a2d33',
-            fontSize: 14,
-            fontWeight: 500,
-          }}
-        >
-          ← Back to dashboard
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ fontSize: 14, color: '#6b7280', marginRight: 6 }}>Candidate</div>
+          <Link
+            href="/candidate/dashboard"
+            style={{
+              padding: '8px 14px',
+              border: '1px solid #e1e5dd',
+              borderRadius: 12,
+              color: '#2a2d33',
+              fontSize: 14,
+              fontWeight: 500,
+            }}
+          >
+            ← Back to dashboard
+          </Link>
+        </div>
       </header>
 
       <Tabs tab={tab} onChange={setTab} hidePreferences={role === 'interviewer'} />

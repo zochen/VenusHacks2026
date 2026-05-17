@@ -298,11 +298,7 @@ export function BasicInfoForm({
             </div>
           )}
 
-          {isEdit && (
-            <div style={{ paddingTop: 8, borderTop: '1px dashed #e1e5dd', fontSize: 12, color: '#6b7280' }}>
-              Password changes will move to a dedicated flow once Supabase auth is wired up.
-            </div>
-          )}
+          {/* Password change flow moved — no inline note shown on profile pages */}
 
           {!readOnly && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginTop: 8 }}>
