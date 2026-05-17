@@ -473,11 +473,53 @@ export default function InterviewerDashboardPage() {
   }
 
   return (
-    <main style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 32px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+    <>
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: 60,
+          height: 600,
+          overflow: 'hidden',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      >
+        <svg
+          data-invert
+          viewBox="0 0 900 600"
+          width="100%"
+          height="600"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ display: 'block' }}
+        >
+          <rect x="0" y="0" width="900" height="600" fill="#ffffff" />
+          <path d="M0 193L129 135L257 141L386 171L514 192L643 147L771 163L900 205L900 0L771 0L643 0L514 0L386 0L257 0L129 0L0 0Z" fill="#ffffff" />
+          <path d="M0 129L129 157L257 142L386 164L514 151L643 137L771 135L900 154L900 0L771 0L643 0L514 0L386 0L257 0L129 0L0 0Z" fill="#eefbfc" />
+          <path d="M0 72L129 90L257 73L386 113L514 83L643 116L771 112L900 110L900 0L771 0L643 0L514 0L386 0L257 0L129 0L0 0Z" fill="#dcf7fa" />
+          <path d="M0 29L129 20L257 26L386 51L514 62L643 45L771 73L900 37L900 0L771 0L643 0L514 0L386 0L257 0L129 0L0 0Z" fill="#caf2f7" />
+        </svg>
+      </div>
+      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 32px', position: 'relative', zIndex: 1 }}>
+      <header
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 32,
+          padding: '24px 28px',
+          background: '#fff',
+          border: '1px solid #94a3b8',
+          borderRadius: 16,
+          boxShadow: '0 4px 16px rgba(13, 148, 136, 0.08)',
+        }}
+      >
         <div>
-          <h1 style={{ fontSize: 32, margin: '0 0 6px' }}>Your interviews</h1>
-          <p style={{ color: '#6b7280', margin: 0 }}>Upcoming and recent technical interviews.</p>
+          <h1 style={{ fontSize: 32, margin: '0 0 6px', color: '#123244', fontWeight: 700 }}>Your interviews</h1>
+          <p style={{ color: '#4a6271', margin: 0, fontSize: 15 }}>Upcoming and recent technical interviews.</p>
         </div>
         <Link
           href="/interviewer/new-interview"
@@ -487,11 +529,13 @@ export default function InterviewerDashboardPage() {
             color: '#fff',
             borderRadius: 12,
             fontWeight: 600,
+            textDecoration: 'none',
+            boxShadow: '0 4px 12px rgba(13, 148, 136, 0.25)',
           }}
         >
           + New interview
         </Link>
-      </div>
+      </header>
 
       <div style={{ display: 'grid', gap: 16 }}>
         {(stored ?? []).concat(FAKE_INTERVIEWS).map((iv) => {
@@ -519,7 +563,7 @@ export default function InterviewerDashboardPage() {
                 }}
                 style={{ width: '100%', display: 'block', cursor: 'pointer' }}
               >
-                <Card style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                <Card style={{ display: 'flex', alignItems: 'center', gap: 20, border: '1px solid #94a3b8' }}>
                   <div
                     style={{
                       width: 48,
@@ -920,6 +964,7 @@ export default function InterviewerDashboardPage() {
         )}
       </div>
     </main>
+    </>
   );
 }
 

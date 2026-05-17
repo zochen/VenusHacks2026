@@ -84,6 +84,7 @@ export default function MarketingPage() {
     >        {/* Smooth ombre cloud behind the logo; aria-hidden since decorative */}
         <div className="logo-cloud" aria-hidden="true" />
         <svg
+          data-invert
           aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 900 600"
@@ -122,6 +123,7 @@ export default function MarketingPage() {
           }}
         />
         <svg
+          data-invert
           aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 900 600"
@@ -221,7 +223,7 @@ export default function MarketingPage() {
           lineHeight: 0,
         }}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 110 }}>
+        <svg data-invert xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 110 }}>
           <path fill="#D8ECF0" fillOpacity="1" d="M0,256L48,234.7C96,213,192,171,288,165.3C384,160,480,192,576,213.3C672,235,768,245,864,229.3C960,213,1056,171,1152,165.3C1248,160,1344,192,1392,208L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
         </svg>
         <div style={{ background: 'linear-gradient(180deg, #D8ECF0 0%, #D8ECF0 40%, rgba(216,236,240,0) 100%)', height: 260, marginBottom: -260, pointerEvents: 'none' }} />
@@ -291,7 +293,7 @@ export default function MarketingPage() {
                             lineHeight: 0,
                           }}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 80 }}>
+                          <svg data-invert xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 80 }}>
                             <path fill="#BDD2E4" fillOpacity="1" d="M0,64L60,74.7C120,85,240,107,360,101.3C480,96,600,64,720,48C840,32,960,32,1080,42.7C1200,53,1320,75,1380,85.3L1440,96L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z" />
                           </svg>
                         </div>
@@ -310,7 +312,7 @@ export default function MarketingPage() {
                     lineHeight: 0,
                   }}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 90 }}>
+                  <svg data-invert xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 90 }}>
                     <path fill="#D8ECF0" fillOpacity="1" d="M0,256L48,234.7C96,213,192,171,288,165.3C384,160,480,192,576,213.3C672,235,768,245,864,229.3C960,213,1056,171,1152,165.3C1248,160,1344,192,1392,208L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
                   </svg>
                   <div style={{ background: 'linear-gradient(180deg, #D8ECF0 0%, #D8ECF0 40%, rgba(216,236,240,0) 100%)', height: 260, marginBottom: -260, pointerEvents: 'none' }} />

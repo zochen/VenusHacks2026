@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Darumadrop+One&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -22,8 +23,14 @@ html, body {
   overflow-x: hidden;
   background: #f7fbff; /* light blue */
   color: #123244; /* deep blue-gray */
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Poppins', 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Headers + titles keep the decorative Darumadrop One face. */
+h1, h2, h3, h4, h5, h6, .capy-title {
+  font-family: 'Darumadrop One', 'Poppins', 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.6px;
 }
 
 @keyframes capyPageFade {
@@ -67,4 +74,28 @@ a:hover {
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* ===== Dark mode — color inversion ===== */
+/* Applies a CSS filter to invert the whole page; images/video/SVG and anything
+   marked [data-no-invert] are counter-inverted so they look correct. */
+html[data-theme="dark"] {
+  background: #0b1116;
+}
+html[data-theme="dark"] body {
+  filter: invert(1) hue-rotate(180deg);
+  background: #fff; /* gets inverted to black */
+}
+html[data-theme="dark"] body img,
+html[data-theme="dark"] body video,
+html[data-theme="dark"] body svg,
+html[data-theme="dark"] body iframe,
+html[data-theme="dark"] body [data-no-invert] {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Opt-in: elements marked data-invert flip WITH the page (e.g., wave SVGs) */
+html[data-theme="dark"] body [data-invert],
+html[data-theme="dark"] body svg[data-invert] {
+  filter: none;
 }

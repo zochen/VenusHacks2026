@@ -110,6 +110,16 @@ export function HeaderNav() {
     router.push('/auth/login');
   };
 
+  const [theme, setTheme] = React.useState<'light' | 'dark'>('light');
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('capy.theme');
+      const initial: 'light' | 'dark' = saved === 'dark' ? 'dark' : 'light';
+      setTheme(initial);
+      document.documentElement.dataset.theme = initial;
+    } catch {}
+  }, []);
+
   if (isLoading) {
     return <nav style={{ display: 'flex', gap: 16, fontSize: 14 }} />;
   }
@@ -167,8 +177,16 @@ export function HeaderNav() {
   const dashboardHref = effectiveRole === 'interviewer' ? '/interviewer/dashboard' : '/candidate/dashboard';
   const profileHref = effectiveRole === 'interviewer' ? '/interviewer/profile' : '/candidate/profile';
 
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('capy.theme', next); } catch {}
+  };
+
   return (
     <nav style={{ display: 'flex', gap: 12, fontSize: 14, alignItems: 'center' }}>
+      <StyledAction onClick={toggleTheme}>{theme === 'dark' ? '☀ Light' : '🌙 Dark'}</StyledAction>
       {user ? (
         <>
           <StyledAction href={dashboardHref}>My Dashboard</StyledAction>
