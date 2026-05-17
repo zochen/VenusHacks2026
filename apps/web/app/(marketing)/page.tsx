@@ -343,7 +343,7 @@ export default function MarketingPage() {
       <section style={{ marginTop: 56, padding: 28, borderRadius: 12, background: '#f7fbff', textAlign: 'center' }}>
         <h3 className="capy-title" style={{ margin: '0 0 8px', fontSize: 20 }}>Ready to try a better interview experience?</h3>
         <div style={{ marginTop: 28 }}>
-          <Link href="/demo/index.html" target="_blank" rel="noopener noreferrer" className="capy-btn" style={{ padding: '12px 20px', background: '#4a90e2', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 700, marginRight: 12 }}>Try Interactive Demo</Link>
+              <Link href="/demo" target="_blank" rel="noopener noreferrer" className="capy-btn" style={{ padding: '12px 20px', background: '#4a90e2', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 700, marginRight: 12 }}>Try Interactive Demo</Link>
           <Link href="/download-extension" className="capy-btn" style={{ padding: '12px 20px', background: '#bfeaf0', color: '#123244', borderRadius: 10, textDecoration: 'none', fontWeight: 700 }}>Download Extension</Link>
         </div>
       </section>

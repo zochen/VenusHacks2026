@@ -12,4 +12,7 @@ export { PauseProcessButtons } from './interview/PauseProcessButtons';
 export { ComfortCompanion } from './interview/ComfortCompanion';
 export { LiveTranscript } from './interview/LiveTranscript';
 
+// Shared overlay which composes the interview UI pieces (caption overlay, companion, controls)
+export { Overlay } from './interview/Overlay';
+
 export { tokens } from './tokens';
