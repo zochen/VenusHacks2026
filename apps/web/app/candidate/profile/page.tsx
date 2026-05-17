@@ -91,6 +91,13 @@ export default function CandidateProfilePage() {
     };
     try {
       localStorage.setItem('capyconnect.profile', JSON.stringify(profile));
+      // if role exists in localStorage, ensure cookie is set as well
+      try {
+        const rawRole = localStorage.getItem('capyconnect.role') ?? 'candidate';
+        if (typeof document !== 'undefined') {
+          document.cookie = `capyconnect.role=${encodeURIComponent(rawRole)}; Path=/; SameSite=Lax`;
+        }
+      } catch {}
     } catch {}
     setProfileSavedAt(Date.now());
   }

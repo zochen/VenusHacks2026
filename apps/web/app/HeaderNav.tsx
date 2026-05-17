@@ -10,6 +10,15 @@ export function HeaderNav() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
+  const [role, setRole] = React.useState<'candidate' | 'interviewer' | null>(null);
+
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem('capyconnect.role');
+      setRole((raw as any) ?? null);
+    } catch {}
+  }, []);
+
   const handleLogout = async () => {
     // try client-side sign out first to update local session immediately
     try {
@@ -35,62 +44,73 @@ export function HeaderNav() {
   };
 
   if (isLoading) {
-    return <nav style={{ display: 'flex', gap: 24, fontSize: 14 }} />;
+    return <nav style={{ display: 'flex', gap: 16, fontSize: 14 }} />;
   }
 
+  function StyledAction({ href, onClick, children }: { href?: string; onClick?: () => void; children: React.ReactNode }) {
+    const [hover, setHover] = React.useState(false);
+    const base: React.CSSProperties = {
+      padding: '8px 14px',
+      borderRadius: 12,
+      background: '#bfeaf0', // slightly darker than header '#caf2f7ff'
+      color: '#123244',
+      textDecoration: 'none',
+      border: '1px solid rgba(18,50,68,0.06)',
+      transition: 'box-shadow 140ms ease, transform 140ms ease',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 8,
+      cursor: 'pointer',
+      fontSize: 14,
+      fontWeight: 600,
+    };
+    const hoverStyle: React.CSSProperties = hover
+      ? { boxShadow: '0 8px 20px rgba(17, 51, 68, 0.12)', transform: 'translateY(-2px)' }
+      : {};
+
+    if (href) {
+      return (
+        <Link
+          href={href}
+          style={{ ...base, ...hoverStyle }}
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+        >
+          {children}
+        </Link>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        style={{ ...base, ...hoverStyle, border: 'none', background: '#bfeaf0' }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      >
+        {children}
+      </button>
+    );
+  }
+
+  const dashboardHref = role === 'interviewer' ? '/interviewer/dashboard' : '/candidate/dashboard';
+  const profileHref = role === 'interviewer' ? '/interviewer/dashboard' : '/candidate/profile';
+
   return (
-    <nav style={{ display: 'flex', gap: 24, fontSize: 14, alignItems: 'center' }}>
+    <nav style={{ display: 'flex', gap: 12, fontSize: 14, alignItems: 'center' }}>
       {user ? (
         <>
-          <Link href="/download-extension" style={{ color: '#2a2d33', textDecoration: 'none', padding: '8px 12px', borderRadius: 6, border: '1px solid rgba(18,50,68,0.06)' }}>
-            Download extension
-          </Link>
-          <Link href="/onboarding" style={{ color: '#2a2d33' }}>
-            Onboarding
-          </Link>
-          <Link href="/candidate/dashboard" style={{ color: '#2a2d33' }}>
-            My dashboard
-          </Link>
-          <Link href="/candidate/interview" style={{ color: '#2a2d33' }}>
-            Simulator
-          </Link>
-          <Link href="/interviewer/dashboard" style={{ color: '#2a2d33' }}>
-            Interviewer
-          </Link>
-          <button
-            onClick={handleLogout}
-            style={{
-              color: '#2a2d33',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: 14,
-              textDecoration: 'underline',
-            }}
-          >
-            Log out
-          </button>
+          <StyledAction href={dashboardHref}>My Dashboard</StyledAction>
+          <StyledAction href="/download-extension">Download Extension</StyledAction>
+          <StyledAction href={profileHref}>Profile</StyledAction>
+          <StyledAction onClick={handleLogout}>Log Out</StyledAction>
         </>
       ) : (
         <>
-          <Link href="/download-extension" style={{ color: '#2a2d33', textDecoration: 'none', padding: '8px 12px', borderRadius: 6, border: '1px solid rgba(18,50,68,0.06)' }}>
-            Download extension
-          </Link>
-          <Link href="/auth/login" style={{ color: '#2a2d33' }}>
-            Log In
-          </Link>
-          <Link
-            href="/auth/signup"
-            style={{
-              color: '#ffffff',
-              backgroundColor: '#2a2d33',
-              padding: '8px 16px',
-              borderRadius: 4,
-              textDecoration: 'none',
-            }}
-          >
-            Sign Up
-          </Link>
+          <StyledAction href="/download-extension">Download Extension</StyledAction>
+          <StyledAction href="/auth/login">Log In</StyledAction>
+          <StyledAction href="/auth/signup">Sign Up</StyledAction>
         </>
       )}
     </nav>

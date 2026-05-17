@@ -36,6 +36,12 @@ export default function OnboardingPage() {
       localStorage.setItem('capyconnect.role', role ?? 'candidate');
     } catch {}
     try {
+      // also set a cookie so server-side middleware can enforce role-based routing
+      if (typeof document !== 'undefined') {
+        document.cookie = `capyconnect.role=${encodeURIComponent(role ?? 'candidate')}; Path=/; SameSite=Lax`;
+      }
+    } catch {}
+    try {
       localStorage.setItem('capyconnect.profile', JSON.stringify(profile));
     } catch {}
     // If the user is an interviewer, skip the communication style step and go to interviewer dashboard
