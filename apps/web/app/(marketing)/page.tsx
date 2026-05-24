@@ -6,7 +6,7 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { Card } from '@quietspace/shared-ui';
+import { DemoVideo } from '../../components/DemoVideo';
 
 const featureCols = [
   {
@@ -135,8 +135,8 @@ export default function MarketingPage() {
         />
       </div>
       {/* Hero Section */}
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 480px', gap: 32, alignItems: 'center', marginBottom: 64, position: 'relative', zIndex: 1 }}>
-        <div>
+      <section className="marketing-hero">
+        <div className="marketing-hero-copy">
           <h1 className="capy-title" style={{ fontSize: 48, lineHeight: 1.05, margin: '40px 0 20px', fontWeight: 800 }}>
             Interviews redesigned for clarity, comfort, and focus.
           </h1>
@@ -152,7 +152,7 @@ export default function MarketingPage() {
             Better interviews for everyone.
           </p>
 
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div className="marketing-hero-actions">
             <Link
               href="/demo/index.html" target="_blank" rel="noopener noreferrer"
               className="capy-btn"
@@ -187,12 +187,10 @@ export default function MarketingPage() {
           </div>
         </div>
 
-        <div style={{ width: '100%', height: 360, borderRadius: 18, background: 'linear-gradient(180deg, #eaf6ff, #ffffff)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {/* Animated mockup placeholder */}
-          <div style={{ width: '88%', height: '86%', borderRadius: 12, background: '#fff', boxShadow: '0 8px 24px rgba(18,50,68,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#56778d' }}>
-            Animated mockup goes here
-          </div>
-        </div>
+        <DemoVideo
+          title="Watch CapyConnect in action"
+          subtitle="See how live captions, persistent questions, and comfort tools support clearer interviews without changing the video call."
+        />
       </section>
 
       {/* Full-bleed wave divider with colored fill below */}
